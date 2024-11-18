@@ -1,0 +1,93 @@
+
+{
+	"tasks": [
+		{
+			"label": "Build",
+			"type": "shell",
+			"command": "gcc",
+			"args": [
+				"${workspaceFolder}\\*.cpp",
+				"-o",
+				"${workspaceFolder}\\${workspaceFolderBasename}.exe",
+				"-I${workspaceFolder}",
+				"-lopengl32",
+				"-lglu32",
+				"-lglut32",
+				"-lglaux",
+				"-lstdc++",	
+				"-w"
+			],
+			"group": {
+				"kind":"build",
+				"isDefault": true
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+		},
+		{
+			"label": "Run",
+			"type": "process",
+			"command": "${workspaceFolder}\\${workspaceFolderBasename}.exe",
+			"dependsOn": ["Build"],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Build & Run",
+			"dependsOn": ["Build", "Run"],
+			"dependsOrder": "sequence"
+		}
+	],
+	"version": "2.0.0"
+}
+
+
+
+// {
+// 	"tasks": [
+// 		{
+// 			"label": "Build",
+// 			"type": "shell",
+// 			"command": "g++",
+// 			"args": [
+// 				"${workspaceFolder}\\iMain.cpp",
+// 				"-o",
+// 				"${workspaceFolder}\\iMain.exe",
+// 				"-I${workspaceFolder}",
+// 				"-lopengl32",
+// 				"-lglu32",
+// 				"-lglut32",
+// 				"-lglaux",
+// 				"-lstdc++",	
+// 				"-w"
+// 			],
+// 			"group": {
+// 				"kind":"build",
+// 				"isDefault": true
+// 			},
+// 			"options": {
+// 				"cwd": "${workspaceFolder}"
+// 			},
+// 		},
+// 		{
+// 			"label": "Run",
+// 			"type": "shell",
+// 			"command": "${workspaceFolder}\\iMain.exe",
+// 			"dependsOn": ["Build"],
+// 			"group": {
+// 				"kind": "test",
+// 				"isDefault": true
+// 			}
+// 		},
+// 		{
+// 			"label": "Build & Run",
+// 			"dependsOn": ["Build", "Run"],
+// 			"dependsOrder": "sequence"
+// 		}
+// 	],
+// 	"version": "2.0.0"
+// }
+

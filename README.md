@@ -1,2 +1,2 @@
 # Pong
-A iGraphics Project
+An iGraphics Project

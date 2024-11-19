@@ -6,7 +6,7 @@
 			"type": "shell",
 			"command": "gcc",
 			"args": [
-				"${workspaceFolder}\\*.cpp",
+				"${workspaceFolder}\\Pong.cpp",
 				"-o",
 				"${workspaceFolder}\\${workspaceFolderBasename}.exe",
 				"-I${workspaceFolder}",

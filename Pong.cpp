@@ -1,43 +1,45 @@
 # include "iGraphics.h"
-#include "C:\\MinGW\\include\\GL\\glut.h"
-/*
-	function iDraw() is called again and again by the system.
 
-	*/
-bool leftMouseDown = false;
-bool rightMouseDown = false;
+/********* All Global and Constant Variables *********/
+// Screen sizes
+int screenWidth = 1520;
+int screenHeight = 900;
 
-int mouseX;
-int mouseY;
+// Mouse Positions
+int mouseX = 0;
+int mouseY = 0; 
 
-int rectX = mouseX;
-int rectY = mouseY;
+// Color RGB values
+double backgroundColor[3] = {12.0, 12.0, 12.0};
+double objectColor[3] = {249, 249, 249};
+
+// Pages
+int currentPage = 0;
 
 
 void iDraw() {
 	//place your drawing codes here
 	iClear();
-	iSetColor(240, 100, 235);
-	iRectangle(20, 20, 640, 640);
-
-	for(int i = 20; i <= (660-64); i += 64)
-	{
-		iSetColor(240, 100, 235);
-		iLine(i, 20, i, (20 + 640));
-	}
-
-	for(int i = 20; i <= (660-64); i += 64)
-	{
-		iSetColor(240, 100, 235);
-		iLine(20, i, 20+640, i);
-	}
-
-	iSetColor(220, 240, 0);
-	iFilledRectangle(20, 20, rectX, rectY);
 	
-	//iFilledRectangle(10, 30, 20, 20);
-	iSetColor(20, 200, 0);
-	iText(20, 10, "Hi, I am iGraphics");
+	if (currentPage == 0)
+	{
+		double sideMargin = 100;
+		double topMargin = 700;
+		double lineHeight = 32;
+
+		iSetColor(objectColor[0], objectColor[1], objectColor[2]);
+		iText(sideMargin, topMargin, "Start Game", GLUT_BITMAP_TIMES_ROMAN_24);
+
+		iSetColor(objectColor[0], objectColor[1], objectColor[2]);
+		iText(sideMargin, topMargin - lineHeight, "Exit", GLUT_BITMAP_TIMES_ROMAN_24);
+
+		if ((mouseX >= 100 && mouseX <= 500) && (mouseY >= 700 && mouseY <= 724))
+		{
+			
+		}
+
+	}
+	
 }
 
 /*
@@ -45,8 +47,8 @@ void iDraw() {
 	(mx, my) is the position where the mouse pointer is.
 	*/
 void iMouseMove(int mx, int my) {
-	// printf("x = %d, y= %d\n",mx,my);
-	//place your codes here
+	mouseX = mx;
+	mouseY = my;
 }
 
 /*
@@ -56,13 +58,11 @@ void iMouseMove(int mx, int my) {
 void iMouse(int button, int state, int mx, int my) {
 	if (button == GLUT_LEFT_BUTTON) {
 		//place your codes here
-		mouseX = mx;
-		mouseY = my;
+		
 	}
-	if (button == GLUT_RIGHT_BUTTON && state == GLUT_CURSOR_WAIT) {
+	
 		//place your codes here
-		rightMouseDown = (state == GLUT_DOWN);
-	}
+		
 	
 }
 
@@ -98,7 +98,7 @@ void iSpecialKeyboard(unsigned char key) {
 int main() {
 	//place your own initialization codes here.
 	
-	iInitialize(680, 680, "demo");
-	glutMotionFunc(motion);
+	iInitialize(screenWidth, screenHeight, "The Pong Game");
+	
 	return 0;
 }

@@ -1,4 +1,4 @@
-# include "iGraphics.h"
+#include "iGraphics.h"
 
 /********* All Global and Constant Variables *********/
 // Screen sizes
@@ -16,6 +16,12 @@ double objectColor[3] = {249, 249, 249};
 // Pages
 int currentPage = 0;
 
+void passiveMotion(int x, int y)
+{
+	mouseX = x;
+	mouseY = y;
+}
+
 
 void iDraw() {
 	//place your drawing codes here
@@ -32,12 +38,26 @@ void iDraw() {
 
 		iSetColor(objectColor[0], objectColor[1], objectColor[2]);
 		iText(sideMargin, topMargin - lineHeight, "Exit", GLUT_BITMAP_TIMES_ROMAN_24);
+		iShowBMP(0,0, "bitmap.bmp");
 
-		if ((mouseX >= 100 && mouseX <= 500) && (mouseY >= 700 && mouseY <= 724))
+		for (int i = 0; i < screenWidth; i += 20)
 		{
-			
+			iSetColor(255, 0, 0);
+			iLine(i, 0, i, screenHeight);
+			iSetColor(255, 255, 255);
+			char str[50];
+			sprintf(str, "%d", i);
+			iText(i, 0, str, GLUT_BITMAP_HELVETICA_10);
 		}
-
+		for (int i = 0; i < screenHeight; i += 20)
+		{
+			iSetColor(255, 0, 0);
+			iLine(0, i, screenWidth, i);
+			iSetColor(255, 255, 255);
+			char str[50];
+			sprintf(str, "%d", i);
+			iText(0, i, str, GLUT_BITMAP_HELVETICA_10);
+		}
 	}
 	
 }
@@ -47,8 +67,7 @@ void iDraw() {
 	(mx, my) is the position where the mouse pointer is.
 	*/
 void iMouseMove(int mx, int my) {
-	mouseX = mx;
-	mouseY = my;
+	
 }
 
 /*
@@ -99,6 +118,7 @@ int main() {
 	//place your own initialization codes here.
 	
 	iInitialize(screenWidth, screenHeight, "The Pong Game");
+	
 	
 	return 0;
 }

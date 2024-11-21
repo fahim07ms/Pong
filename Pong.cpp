@@ -1,63 +1,37 @@
-#include "iGraphics.h"
+#include "drawPages.h"
+#include <windows.h>
+#include <mmsystem.h>
+#include <winuser.h>
+
+#ifndef iGraphics.h
+#define iGraphics.h
+#endif	
 
 /********* All Global and Constant Variables *********/
 // Screen sizes
-int screenWidth = 1520;
-int screenHeight = 900;
+// int screenWidth = 1536;
+// int screenHeight = 841;
+int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
+int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
 // Mouse Positions
 int mouseX = 0;
 int mouseY = 0; 
 
-// Color RGB values
-double backgroundColor[3] = {12.0, 12.0, 12.0};
-double objectColor[3] = {249, 249, 249};
-
 // Pages
-int currentPage = 0;
-
-void passiveMotion(int x, int y)
-{
-	mouseX = x;
-	mouseY = y;
-}
-
+int currentPage = -1;
 
 void iDraw() {
 	//place your drawing codes here
 	iClear();
 	
-	if (currentPage == 0)
+	if (currentPage == -1)
 	{
-		double sideMargin = 100;
-		double topMargin = 700;
-		double lineHeight = 32;
-
-		iSetColor(objectColor[0], objectColor[1], objectColor[2]);
-		iText(sideMargin, topMargin, "Start Game", GLUT_BITMAP_TIMES_ROMAN_24);
-
-		iSetColor(objectColor[0], objectColor[1], objectColor[2]);
-		iText(sideMargin, topMargin - lineHeight, "Exit", GLUT_BITMAP_TIMES_ROMAN_24);
-		iShowBMP(0,0, "bitmap.bmp");
-
-		for (int i = 0; i < screenWidth; i += 20)
-		{
-			iSetColor(255, 0, 0);
-			iLine(i, 0, i, screenHeight);
-			iSetColor(255, 255, 255);
-			char str[50];
-			sprintf(str, "%d", i);
-			iText(i, 0, str, GLUT_BITMAP_HELVETICA_10);
-		}
-		for (int i = 0; i < screenHeight; i += 20)
-		{
-			iSetColor(255, 0, 0);
-			iLine(0, i, screenWidth, i);
-			iSetColor(255, 255, 255);
-			char str[50];
-			sprintf(str, "%d", i);
-			iText(0, i, str, GLUT_BITMAP_HELVETICA_10);
-		}
+		drawHomePage();
+	}
+	else if (currentPage == 1)
+	{
+		drawGamePage();
 	}
 	
 }
@@ -75,13 +49,36 @@ void iMouseMove(int mx, int my) {
 	(mx, my) is the position where the mouse pointer is.
 	*/
 void iMouse(int button, int state, int mx, int my) {
-	if (button == GLUT_LEFT_BUTTON) {
-		//place your codes here
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		if (currentPage == -1)
+		{
+			clickSound();
+			if ((mx >= 1000  && mx <= 1260) && (my >= 680 && my <= 740))
+			{
+				currentPage = 0;
+			}
+			if ((mx >= 1000 && mx <= 1305) && (my >= 580 && my <= 640))
+			{
+				currentPage = 1;
+			}
+			if ((mx >= 1000 && mx <= 1280) && (my >= 480 && my <= 540))
+			{
+				currentPage = 2;
+			}
+			if ((mx >= 1000 && mx <= 1420) && (my >= 380 && my <= 440))
+			{
+				currentPage = 3;
+			}
+			if ((mx >= 1000 && mx <= 1140) && (my >= 280 && my <= 340))
+			{
+				exit(0);
+			}
+
+		}
 		
 	}
 	
-		//place your codes here
-		
+	
 	
 }
 
@@ -116,9 +113,9 @@ void iSpecialKeyboard(unsigned char key) {
 
 int main() {
 	//place your own initialization codes here.
-	
 	iInitialize(screenWidth, screenHeight, "The Pong Game");
-	
+	iSetTimer(10, drawGamePage);
 	
 	return 0;
 }
+

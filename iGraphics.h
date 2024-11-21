@@ -11,12 +11,12 @@
 # include <stdlib.h>
 #pragma comment(lib, "glut32.lib")
 #pragma comment(lib, "glaux.lib")
-#include "C:\\MinGW\\include\\GL\\glaux.h"
+#include "glaux.h"
 #include <time.h>
 #include <math.h>
 #include <windows.h>
 #include <winuser.h>
-#include "C:\\MinGW\\include\\GL\\glut.h"
+#include "GL\\glut.h"
 
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION

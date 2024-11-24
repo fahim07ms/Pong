@@ -2,10 +2,13 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include <winuser.h>
+#include "GL/glut.h"
 
 #ifndef iGraphics.h
 #define iGraphics.h
 #endif	
+
+extern struct Player Player;
 
 /********* All Global and Constant Variables *********/
 // Screen sizes
@@ -60,6 +63,7 @@ void iMouse(int button, int state, int mx, int my) {
 			if ((mx >= 1000 && mx <= 1305) && (my >= 580 && my <= 640))
 			{
 				currentPage = 1;
+				Sleep(500);
 			}
 			if ((mx >= 1000 && mx <= 1280) && (my >= 480 && my <= 540))
 			{
@@ -104,8 +108,17 @@ void iKeyboard(unsigned char key) {
 	*/
 void iSpecialKeyboard(unsigned char key) {
 
-	if (key == GLUT_KEY_END) {
+	if (key == GLUT_KEY_END) 
+	{
 		exit(0);
+	}
+	if (key == GLUT_KEY_UP && player1.barMoveState != 1)
+	{
+		player1.barY += 20;
+	}
+	if (key == GLUT_KEY_DOWN && player1.barMoveState != -1)
+	{
+		player1.barY -= 20;
 	}
 	//place your codes for other keys here
 }

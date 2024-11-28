@@ -53,7 +53,7 @@ struct Players {
 
 struct Players player1 = { .playerNo = 1, 
                            .isComputer = 0, 
-                           .width = 15, 
+                           .width = 16, 
                            .height = 100,  
                            .barX = 1536 - 235, 
                            .barY = 380, 
@@ -65,7 +65,7 @@ struct Players player1 = { .playerNo = 1,
 struct Players player2 = {
                            .playerNo = 2, 
                            .isComputer = 1, 
-                           .width = 15, 
+                           .width = 16, 
                            .height = 100,  
                            .barX = 220, 
                            .barY = 380, 
@@ -167,10 +167,10 @@ void drawGamePage()
     
     // Always change the ball's X and Y value
     
-    // ball1.x += (ball1.velocity * cos(ball1.angle));
-    // ball1.y += (ball1.velocity * sin(ball1.angle));
-    ball1.x += ball1.dx;
-    ball1.y += ball1.dy;
+    ball1.x += (ball1.velocity * cos(ball1.angle));
+    ball1.y += (ball1.velocity * sin(ball1.angle));
+    // ball1.x += ball1.dx;
+    // ball1.y += ball1.dy;
 
     // Change the y aixs of 1st bar according to the ball
     player2.barY = ball1.y;
@@ -178,9 +178,9 @@ void drawGamePage()
     // If the ball hits the top or bottom borders
     if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
     {
-        // ball1.angle = -ball1.angle;
+        ball1.angle = -ball1.angle;
         ballHitWallSound();
-        ball1.dy = -ball1.dy;
+        // ball1.dy = -ball1.dy;
     }
     // For the left side bar (Player 2)
     // When the ball hits in left bar area
@@ -188,23 +188,24 @@ void drawGamePage()
     {
         ball1.x = player2.barX + player2.width + 10;
         // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
-        // ball1.angle = atan((2 * (ball1.y - player2.barY - 50) / player2.width));
-        // printf("Angle:%lf\n");
-        ball1.dx = -ball1.dx;
+        printf("%d %d %d %d", ball1.x, ball1.y, player2.barX, player2.barY);
+        ball1.angle = atan((ball1.y - player2.barY - 50) / (ball1.x - player2.barX - player2.width/2));
+        printf("Angle:%lf\n", ball1.angle);
+        // ball1.dx = -ball1.dx;
 
-        if (ball1.y == (player2.barY + player2.height/2)) 
-        {
-            ball1.dy = 0;
-        }
-        else if (ball1.y < (player2.barY + player2.height/2)) 
-        {
-            if (ball1.dy >= 0) ball1.dy = -2;
+        // if (ball1.y == (player2.barY + player2.height/2)) 
+        // {
+        //     ball1.dy = 0;
+        // }
+        // else if (ball1.y < (player2.barY + player2.height/2)) 
+        // {
+        //     if (ball1.dy >= 0) ball1.dy = -2;
 
-        }
-        else if (ball1.y > (player2.barY + player2.height/2)) 
-        {
-            if (ball1.dy <= 0) ball1.dy = 2;
-        }
+        // }
+        // else if (ball1.y > (player2.barY + player2.height/2)) 
+        // {
+        //     if (ball1.dy <= 0) ball1.dy = 2;
+        // }
     }
     // When the ball hits in right bar area
     if (ball1.x + ball1.radius > player1.barX && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
@@ -212,24 +213,24 @@ void drawGamePage()
         ball1.x = player1.barX - 10;
         
         // ball1.x = player2.barX + player2.width + 10;
-        // ball1.angle = 2*acos(0) - atan((2 * (ball1.y - player1.barY - 50) / player1.width));
+        ball1.angle = atan((ball1.y - player1.barY - 50) / (ball1.x - player1.barX - player1.width/2));
 
-        ball1.dx = -ball1.dx;
+        // ball1.dx = -ball1.dx;
 
 
-        if (ball1.y == (player1.barY + player1.height/2)) 
-        {
-            ball1.dy = 0;
-        }
-        else if (ball1.y < (player1.barY + player1.height/2)) 
-        {
-            if (ball1.dy >= 0) ball1.dy = -2;
-        }
-        else if (ball1.y > (player1.barY + player1.height/2)) 
-        {
-            printf("Got it\n");
-            if (ball1.dy <= 0) ball1.dy = 2;
-        }
+        // if (ball1.y == (player1.barY + player1.height/2)) 
+        // {
+        //     ball1.dy = 0;
+        // }
+        // else if (ball1.y < (player1.barY + player1.height/2)) 
+        // {
+        //     if (ball1.dy >= 0) ball1.dy = -2;
+        // }
+        // else if (ball1.y > (player1.barY + player1.height/2)) 
+        // {
+        //     printf("Got it\n");
+        //     if (ball1.dy <= 0) ball1.dy = 2;
+        // }
     }
     
     
@@ -239,7 +240,7 @@ void drawGamePage()
         ball1.x = 768;
         ball1.y = 400;
 
-        ball1.angle = 0;
+        ball1.angle = 2*cos(0);
         ball1.dy = 0;
 
         if (ball1.dx > 0) player1.score++;

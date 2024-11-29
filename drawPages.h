@@ -31,7 +31,7 @@ struct Balls {
 struct Balls ball1 = {.x = 768,
                       .y = 400,
                       .velocity = 1,
-                      .angle = 2*cos(0),
+                      .angle =0,
                       .radius = 12,
                       .dx = -2,
                       .dy = 2

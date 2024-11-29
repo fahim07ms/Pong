@@ -1,10 +1,8 @@
 //
 //  Original Author: S. M. Shahriar Nirjon
+//  last modified: November 28, 2024
 //
-//  Last Modified by: Mohammad Saifur Rahman
-//  last modified: December 20, 2015
-//
-//  Version: 2.0.2012.2015
+//  Version: 2.0.2012.2015.2024
 //
 
 #pragma comment(lib, "glut32.lib")
@@ -20,7 +18,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include ".\\OpenGL\\include\\stb_image_resize.h"
+#include "stb_image_resize.h"
 
 typedef struct{
     unsigned char* data;
@@ -52,6 +50,7 @@ void iDraw();
 void iKeyboard(unsigned char);
 void iSpecialKeyboard(unsigned char);
 void iMouseMove(int, int);
+void iPassiveMouseMove(int, int);
 void iMouse(int button, int state, int x, int y);
 
 static void  __stdcall iA0(HWND,unsigned int, unsigned int, unsigned long){if(!iAnimPause[0])iAnimFunction[0]();}
@@ -641,6 +640,16 @@ void mouseMoveHandlerFF(int mx, int my)
     glFlush();
 }
 
+
+void mousePassiveMoveHandlerFF(int x, int y)
+{
+    iMouseX = x;
+    iMouseY = iScreenHeight - y;
+    iPassiveMouseMove(iMouseX, iMouseY);
+
+    glFlush();
+}
+
 void mouseHandlerFF(int button, int state, int x, int y)
 {
     iMouseX = x;
@@ -674,6 +683,7 @@ void iInitialize(int width=500, int height=500, char *title="iGraphics")
     glutSpecialFunc(keyboardHandler2FF); //special keys
     glutMouseFunc(mouseHandlerFF);
     glutMotionFunc(mouseMoveHandlerFF);
+    glutPassiveMotionFunc(mousePassiveMoveHandlerFF);
     glutIdleFunc(animFF) ;
 
     //
@@ -683,6 +693,8 @@ void iInitialize(int width=500, int height=500, char *title="iGraphics")
     //
     glAlphaFunc(GL_GREATER,0.0f);
     glEnable(GL_ALPHA_TEST);
+
+    glutFullScreen();
 
     glutMainLoop();
 }

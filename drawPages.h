@@ -8,15 +8,10 @@
 #define windows.h
 #endif	
 
-extern int screenWidth;
-extern int screenHeight;
+#define PI 3.1416
+int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
+int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
-// Ball
-// double ballX = 780;
-// double ballY = 400;
-// double ballDX = -2;
-// double ballDY = 2;
-// double ballRadius = 12;
 
 struct Balls {
     double x;
@@ -30,11 +25,11 @@ struct Balls {
 
 struct Balls ball1 = {.x = 768,
                       .y = 400,
-                      .velocity = 1,
-                      .angle =0,
+                      .velocity = 4,
+                      .angle = 0,
                       .radius = 12,
-                      .dx = -2,
-                      .dy = 2
+                      .dx = -5,
+                      .dy = 5
             };
 
 int borderBridth = 20;
@@ -56,8 +51,8 @@ struct Players player1 = { .playerNo = 1,
                            .width = 16, 
                            .height = 100,  
                            .barX = 1536 - 235, 
-                           .barY = 380, 
-                           .barDY = 35, 
+                           .barY = 350, 
+                           .barDY = 50, 
                            .barMoveState = 0,
                            .score = 0
                            };
@@ -68,17 +63,11 @@ struct Players player2 = {
                            .width = 16, 
                            .height = 100,  
                            .barX = 220, 
-                           .barY = 380, 
+                           .barY = 350, 
                            .barDY = 35, 
                            .barMoveState = 0,
                            .score = 0
                            };
-
-
-// int bar1X = 220;
-// int bar1Y = 380;
-// int player2.width = 15;
-// int player2.height = 100;
 
 // Colors
 int violet[3] = {124, 23, 255};
@@ -86,7 +75,6 @@ int black[3] = {4, 4, 4};
 
 // If there is any game to resume or not
 int haveResume = 0;
-
 
 // Prototypes
 void ballHitWallSound();
@@ -166,7 +154,6 @@ void drawGamePage()
     iFilledRectangle(player2.barX, player2.barY, player2.width, player2.height);
     
     // Always change the ball's X and Y value
-    
     ball1.x += (ball1.velocity * cos(ball1.angle));
     ball1.y += (ball1.velocity * sin(ball1.angle));
     // ball1.x += ball1.dx;
@@ -186,11 +173,9 @@ void drawGamePage()
     // When the ball hits in left bar area
     if (ball1.x - ball1.radius - player2.width < player2.barX && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
     {
-        ball1.x = player2.barX + player2.width + 10;
+        ball1.x = player2.barX + player2.width + ball1.radius;
         // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
-        printf("%d %d %d %d", ball1.x, ball1.y, player2.barX, player2.barY);
-        ball1.angle = atan((ball1.y - player2.barY - 50) / (ball1.x - player2.barX - player2.width/2));
-        printf("Angle:%lf\n", ball1.angle);
+        ball1.angle = (PI/2)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
         // ball1.dx = -ball1.dx;
 
         // if (ball1.y == (player2.barY + player2.height/2)) 
@@ -200,7 +185,6 @@ void drawGamePage()
         // else if (ball1.y < (player2.barY + player2.height/2)) 
         // {
         //     if (ball1.dy >= 0) ball1.dy = -2;
-
         // }
         // else if (ball1.y > (player2.barY + player2.height/2)) 
         // {
@@ -210,11 +194,8 @@ void drawGamePage()
     // When the ball hits in right bar area
     if (ball1.x + ball1.radius > player1.barX && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
     {
-        ball1.x = player1.barX - 10;
-        
-        // ball1.x = player2.barX + player2.width + 10;
-        ball1.angle = atan((ball1.y - player1.barY - 50) / (ball1.x - player1.barX - player1.width/2));
-
+        ball1.x = player1.barX - ball1.radius;
+        ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
         // ball1.dx = -ball1.dx;
 
 
@@ -240,7 +221,7 @@ void drawGamePage()
         ball1.x = 768;
         ball1.y = 400;
 
-        ball1.angle = 2*cos(0);
+        ball1.angle = 0;
         ball1.dy = 0;
 
         if (ball1.dx > 0) player1.score++;

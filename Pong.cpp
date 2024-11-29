@@ -8,15 +8,13 @@
 #define iGraphics.h
 #endif	
 
-extern struct Player Player;
-
 /********* All Global and Constant Variables *********/
 // Screen sizes
 // int screenWidth = 1536;
 // int screenHeight = 841;
-int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
-int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
+extern int screenWidth;
+extern int screenHeight;
 // Mouse Positions
 int mouseX = 0;
 int mouseY = 0; 
@@ -33,7 +31,7 @@ void iDraw() {
 		drawHomePage();
 	}
 	else if (currentPage == 1)
-	{
+	{	
 		drawGamePage();
 	}
 	
@@ -82,8 +80,18 @@ void iMouse(int button, int state, int mx, int my) {
 		
 	}
 	
-	
-	
+}
+
+void iPassiveMouseMove(int mx, int my)
+{
+	if (currentPage == -1)
+	{
+
+	}
+	else if (currentPage == 1)
+	{
+		player1.barY = my;
+	}
 }
 
 /*
@@ -114,11 +122,11 @@ void iSpecialKeyboard(unsigned char key) {
 	}
 	if (key == GLUT_KEY_UP && player1.barMoveState != 1)
 	{
-		player1.barY += 20;
+		player1.barY += player1.barDY;
 	}
 	if (key == GLUT_KEY_DOWN && player1.barMoveState != -1)
 	{
-		player1.barY -= 20;
+		player1.barY -= player1.barDY;
 	}
 	//place your codes for other keys here
 }

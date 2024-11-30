@@ -12,7 +12,14 @@
 int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
 int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
-int menuButton = -1;
+int menuButtonHovered = -1;
+int playerButtonHovered = -1;
+int maxScore = 10;
+int prevPage = -1;
+int controlButtonHovered = -1;
+int player1ControlIsMouse = 0;
+
+int verticalCollisionDistance = 0;
 
 struct Balls {
     double x;
@@ -26,11 +33,11 @@ struct Balls {
 
 struct Balls ball1 = {.x = 768,
                       .y = 400,
-                      .velocity = 4,
+                      .velocity = 5,
                       .angle = 0,
-                      .radius = 12,
-                      .dx = -5,
-                      .dy = 5
+                      .radius = 12
+                    //   .dx = -5,
+                    //   .dy = 5
             };
 
 int borderBridth = 20;
@@ -45,6 +52,7 @@ struct Players {
     int barDY;
     int barMoveState;
     int score;
+    double maxSpeed;
 };
 
 struct Players player1 = { .playerNo = 1, 
@@ -55,7 +63,8 @@ struct Players player1 = { .playerNo = 1,
                            .barY = 350, 
                            .barDY = 50, 
                            .barMoveState = 0,
-                           .score = 0
+                           .score = 0,
+                           .maxSpeed = 2.0
                            };
 
 struct Players player2 = {
@@ -75,7 +84,7 @@ int violet[3] = {124, 23, 255};
 int black[3] = {4, 4, 4};
 
 // If there is any game to resume or not
-int haveResume = 1;
+int haveResume = 0;
 
 // Prototypes
 void ballHitWallSound();
@@ -113,7 +122,7 @@ void drawHomePage()
     int i = (haveResume) ? 0 : 1;
     for (; i < 5; i++) 
     {
-        if (menuButton == i)
+        if (menuButtonHovered == i)
         {
             iSetColor(124, 23, 255);
             iFilledRectangle(menuLeftMargin - 20, menuTopMargin- 100*i + 10, 470, 70);
@@ -142,16 +151,39 @@ void drawHomePage()
     // }
 }
 
+bool checkGameEnd(int score)
+{
+    return score == maxScore;
+}
+
+void gameEnd(int playerNo)
+{
+    ball1.radius = 0;
+    ball1.angle = 0;
+    ball1.velocity = 0;
+}
+
+
 void drawGamePage()
 {
     srand(time(NULL));
+    // Drawing the scores
+    char scoreImg1[100];
+    char scoreImg2[100];
+    sprintf(scoreImg1, ".\\assets\\scores\\%d.bmp", player1.score);
+    sprintf(scoreImg2, ".\\assets\\scores\\%d.bmp", player2.score);
+
+    iShowBMP2(560, screenHeight - 220, scoreImg1, 0);
+    iShowBMP2(788, screenHeight - 220, scoreImg2, 0);
+
+
     iSetColor(violet[0], violet[1], violet[2]);
     iFilledRectangle(200, 0, screenWidth-400, borderBridth); // Bottom border
     iFilledRectangle(200, screenHeight - borderBridth, screenWidth-400, borderBridth); // Top border
     for (int i = 0; i < 20; i++) iFilledRectangle(768, borderBridth + i*40, 20, 20); // Middle point indicators
 
     // Ball
-    iSetColor(255, 255,255);
+    iSetColor(violet[0], violet[1],violet[2]);
     iFilledCircle(ball1.x, ball1.y, ball1.radius);
 
     // Setup for if the ball goes away
@@ -166,6 +198,7 @@ void drawGamePage()
     iFilledRectangle(player1.barX, player1.barY, player1.width, player1.height);
     iFilledRectangle(player2.barX, player2.barY, player2.width, player2.height);
     
+
     // Always change the ball's X and Y value
     ball1.x += (ball1.velocity * cos(ball1.angle));
     ball1.y += (ball1.velocity * sin(ball1.angle));
@@ -209,6 +242,14 @@ void drawGamePage()
     {
         ball1.x = player1.barX - ball1.radius;
         ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
+        verticalCollisionDistance = ((ball1.velocity * sin(ball1.angle)) * (screenWidth - 440)) / (ball1.velocity * cos(ball1.angle));
+
+        int bounceDistance;
+        if ((ball1.velocity * sin(ball1.angle)) < 0) bounceDistance = ball1.y - borderBridth;
+        else bounceDistance = screenHeight - borderBridth - ball1.y;
+
+        
+        
         // ball1.dx = -ball1.dx;
 
 
@@ -234,11 +275,19 @@ void drawGamePage()
         ball1.x = 768;
         ball1.y = 400;
 
-        ball1.angle = 0;
-        ball1.dy = 0;
+        if ((ball1.velocity * cos(ball1.angle)) > 0) 
+        {
+            player1.score++;
+            if (checkGameEnd(player1.score)) gameEnd(player1.playerNo);
+        }
+        else 
+        {
+            player2.score++;
+            if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
+        }
 
-        if (ball1.dx > 0) player1.score++;
-        else player2.score++;
+        ball1.angle = PI - ball1.angle;
+        // ball1.dy = 0;
 
         Sleep(2000);
     }
@@ -266,6 +315,17 @@ void drawGamePage()
     {
         player1.barMoveState = 0;
     }
+
+}
+
+
+void drawSettingsPage()
+{
+
+}
+
+void instructionPage()
+{
 
 }
 

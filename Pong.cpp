@@ -11,16 +11,20 @@
 /********* All Global and Constant Variables *********/
 // Screen sizes
 // int screenWidth = 1536;
-// int screenHeight = 841;
+// int screenHeight = 793;
 
 extern int screenWidth;
 extern int screenHeight;
+extern int menuTopMargin;
+extern int menuLeftMargin;
+
 // Mouse Positions
 int mouseX = 0;
 int mouseY = 0; 
 
 // Pages
 int currentPage = -1;
+extern int menuButton;
 
 void iDraw() {
 	//place your drawing codes here
@@ -54,27 +58,36 @@ void iMouse(int button, int state, int mx, int my) {
 		if (currentPage == -1)
 		{
 			clickSound();
-			if ((mx >= 1000  && mx <= 1260) && (my >= 680 && my <= 740))
+			for (int i = 0; i < 5; i++)
 			{
-				currentPage = 0;
+				if ((mx >= 980 && mx <= 1430) && (my + 25 >= (menuTopMargin - 100*i) && my + 25 <= (menuTopMargin - 100*i + 80)))
+				{
+					if (i == 4) exit(0);
+					else currentPage = i;
+
+				}
 			}
-			if ((mx >= 1000 && mx <= 1305) && (my >= 580 && my <= 640))
-			{
-				currentPage = 1;
-				Sleep(500);
-			}
-			if ((mx >= 1000 && mx <= 1280) && (my >= 480 && my <= 540))
-			{
-				currentPage = 2;
-			}
-			if ((mx >= 1000 && mx <= 1420) && (my >= 380 && my <= 440))
-			{
-				currentPage = 3;
-			}
-			if ((mx >= 1000 && mx <= 1140) && (my >= 280 && my <= 340))
-			{
-				exit(0);
-			}
+			// if ((mx >= 1000  && mx <= 1260) && (my >= 680 && my <= 740))
+			// {
+			// 	currentPage = 0;
+			// }
+			// if ((mx >= 1000 && mx <= 1305) && (my >= 580 && my <= 640))
+			// {
+			// 	currentPage = 1;
+			// 	Sleep(500);
+			// }
+			// if ((mx >= 1000 && mx <= 1280) && (my >= 480 && my <= 540))
+			// {
+			// 	currentPage = 2;
+			// }
+			// if ((mx >= 1000 && mx <= 1420) && (my >= 380 && my <= 440))
+			// {
+			// 	currentPage = 3;
+			// }
+			// if ((mx >= 1000 && mx <= 1140) && (my >= 280 && my <= 340))
+			// {
+			// 	exit(0);
+			// }
 
 		}
 		
@@ -84,14 +97,26 @@ void iMouse(int button, int state, int mx, int my) {
 
 void iPassiveMouseMove(int mx, int my)
 {
+	printf("mx: %d, my: %d\n", mx, my);
 	if (currentPage == -1)
 	{
-
+		for (int i = 0; i < 5; i++)
+		{
+			printf("%d\n", menuTopMargin - 100*i);
+			if ((mx >= 980 && mx <= 1430) && (my + 25 >= (menuTopMargin - 100*i) && my + 25 <= (menuTopMargin - 100*i + 80)))
+			{
+				menuButton = i;
+				break;
+			}
+			else menuButton = -1;
+		}
 	}
 	else if (currentPage == 1)
 	{
 		player1.barY = my;
 	}
+
+	
 }
 
 /*
@@ -100,6 +125,7 @@ void iPassiveMouseMove(int mx, int my)
 	*/
 void iKeyboard(unsigned char key) {
 	if (key == 'q') {
+		printf("%d %d\n", screenWidth, screenHeight);
 		exit(0);
 	}
 	//place your codes for other keys here

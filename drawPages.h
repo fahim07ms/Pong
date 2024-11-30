@@ -4,14 +4,15 @@
 #include <unistd.h>
 #include <math.h>
 
-#ifndef windows.h
-#define windows.h
+#ifndef windows_h
+#define windows_h
 #endif	
 
 #define PI 3.1416
 int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
 int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
+int menuButton = -1;
 
 struct Balls {
     double x;
@@ -74,40 +75,52 @@ int violet[3] = {124, 23, 255};
 int black[3] = {4, 4, 4};
 
 // If there is any game to resume or not
-int haveResume = 0;
+int haveResume = 1;
 
 // Prototypes
 void ballHitWallSound();
 
 double responsiveX(double x)
 {
-    return x * (screenWidth / 1536);
+    return x * (screenWidth * 1.0 / 1536);
 }
 
 double responsiveY(double y)
 {
-    return y * (screenHeight / 841);
+    return y * (screenHeight * 1.0 / 840);
 }
 
+int menuTopMargin = 680;
+int menuLeftMargin = 1000;
+
 // Menu Options Image
-char menuOptions[5][100] = {".\\assets\\menu\\resume.bmp", ".\\assets\\menu\\newGame.bmp", ".\\assets\\menu\\settings.bmp", ".\\assets\\menu\\instruct.bmp", ".\\assets\\menu\\exit.bmp"};
+char menuOptions[5][100] = {".\\assets\\images\\resume.bmp", ".\\assets\\images\\newGame.bmp", ".\\assets\\images\\settings.bmp", ".\\assets\\images\\instructions.bmp", ".\\assets\\images\\exit.bmp"};
 
 void drawHomePage()
 {
 
-    double sideMargin = responsiveX(60);
-    double topMargin = responsiveY(100);
-    double lineHeight = 32;
+    // double sideMargin = responsiveX(60);
+    // double topMargin = responsiveY(100);
+    // double lineHeight = 32;
 
-    iSetColor(black[0], black[1], black[2]);
-    iFilledRectangle(0, 0, screenWidth, screenHeight);
+    // iSetColor(black[0], black[1], black[2]);
+    // iFilledRectangle(0, 0, screenWidth, screenHeight);
 
-    iShowBMP(sideMargin, topMargin, ".\\PongImg\\logo.bmp");
+    iShowBMP(0, 0, ".\\assets\\images\\logo.bmp");
 
-    int menuTopMargin = 680, menuLeftMargin = 1000;
+    
 
     int i = (haveResume) ? 0 : 1;
-    for (; i < 5; i++) iShowBMP(1000,  menuTopMargin - 100*i, menuOptions[i]);
+    for (; i < 5; i++) 
+    {
+        if (menuButton == i)
+        {
+            iSetColor(124, 23, 255);
+            iFilledRectangle(menuLeftMargin - 20, menuTopMargin- 100*i + 10, 470, 70);
+            iShowBMP2(menuLeftMargin,  menuTopMargin - 100*i, menuOptions[i], 0);
+        }
+        else iShowBMP2(menuLeftMargin,  menuTopMargin - 100*i, menuOptions[i], 0);
+    }
 
     // for (int i = 0; i < screenWidth; i += 20)
     // {

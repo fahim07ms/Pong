@@ -14,12 +14,12 @@ int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
 int menuButtonHovered = -1;
 int playerButtonHovered = -1;
-int maxScore = 10;
+int maxScore = 5;
 int prevPage = -1;
 int controlButtonHovered = -1;
 int player1ControlIsMouse = 0;
 
-int verticalCollisionDistance = 0;
+double verticalCollisionDistance = 0;
 
 struct Balls {
     double x;
@@ -33,7 +33,7 @@ struct Balls {
 
 struct Balls ball1 = {.x = 768,
                       .y = 400,
-                      .velocity = 5,
+                      .velocity = 12,
                       .angle = 0,
                       .radius = 12
                     //   .dx = -5,
@@ -61,7 +61,7 @@ struct Players player1 = { .playerNo = 1,
                            .height = 100,  
                            .barX = 1536 - 235, 
                            .barY = 350, 
-                           .barDY = 50, 
+                           .barDY = 30, 
                            .barMoveState = 0,
                            .score = 0,
                            .maxSpeed = 2.0
@@ -74,7 +74,7 @@ struct Players player2 = {
                            .height = 100,  
                            .barX = 220, 
                            .barY = 350, 
-                           .barDY = 35, 
+                           .barDY = 30, 
                            .barMoveState = 0,
                            .score = 0
                            };
@@ -88,6 +88,7 @@ int haveResume = 0;
 
 // Prototypes
 void ballHitWallSound();
+void hitSound();
 
 double responsiveX(double x)
 {
@@ -185,6 +186,7 @@ void drawGamePage()
     // Ball
     iSetColor(violet[0], violet[1],violet[2]);
     iFilledCircle(ball1.x, ball1.y, ball1.radius);
+    // iShowBMP2(ball1.x, ball1.y, ".\\assets\\ball.bmp", 0);
 
     // Setup for if the ball goes away
     iSetColor(4, 4, 4);
@@ -199,122 +201,7 @@ void drawGamePage()
     iFilledRectangle(player2.barX, player2.barY, player2.width, player2.height);
     
 
-    // Always change the ball's X and Y value
-    ball1.x += (ball1.velocity * cos(ball1.angle));
-    ball1.y += (ball1.velocity * sin(ball1.angle));
-    // ball1.x += ball1.dx;
-    // ball1.y += ball1.dy;
-
-    // Change the y aixs of 1st bar according to the ball
-    player2.barY = ball1.y;
-
-    // If the ball hits the top or bottom borders
-    if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
-    {
-        ball1.angle = -ball1.angle;
-        ballHitWallSound();
-        // ball1.dy = -ball1.dy;
-    }
-    // For the left side bar (Player 2)
-    // When the ball hits in left bar area
-    if (ball1.x - ball1.radius - player2.width < player2.barX && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
-    {
-        ball1.x = player2.barX + player2.width + ball1.radius;
-        // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
-        ball1.angle = (PI/2)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
-        // ball1.dx = -ball1.dx;
-
-        // if (ball1.y == (player2.barY + player2.height/2)) 
-        // {
-        //     ball1.dy = 0;
-        // }
-        // else if (ball1.y < (player2.barY + player2.height/2)) 
-        // {
-        //     if (ball1.dy >= 0) ball1.dy = -2;
-        // }
-        // else if (ball1.y > (player2.barY + player2.height/2)) 
-        // {
-        //     if (ball1.dy <= 0) ball1.dy = 2;
-        // }
-    }
-    // When the ball hits in right bar area
-    if (ball1.x + ball1.radius > player1.barX && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
-    {
-        ball1.x = player1.barX - ball1.radius;
-        ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
-        verticalCollisionDistance = ((ball1.velocity * sin(ball1.angle)) * (screenWidth - 440)) / (ball1.velocity * cos(ball1.angle));
-
-        int bounceDistance;
-        if ((ball1.velocity * sin(ball1.angle)) < 0) bounceDistance = ball1.y - borderBridth;
-        else bounceDistance = screenHeight - borderBridth - ball1.y;
-
-        
-        
-        // ball1.dx = -ball1.dx;
-
-
-        // if (ball1.y == (player1.barY + player1.height/2)) 
-        // {
-        //     ball1.dy = 0;
-        // }
-        // else if (ball1.y < (player1.barY + player1.height/2)) 
-        // {
-        //     if (ball1.dy >= 0) ball1.dy = -2;
-        // }
-        // else if (ball1.y > (player1.barY + player1.height/2)) 
-        // {
-        //     printf("Got it\n");
-        //     if (ball1.dy <= 0) ball1.dy = 2;
-        // }
-    }
     
-    
-    // If the ball goes out
-    if ((ball1.x < 200 || ball1.x > (screenWidth - 200)) && (ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + 100 + ball1.radius)) 
-    {
-        ball1.x = 768;
-        ball1.y = 400;
-
-        if ((ball1.velocity * cos(ball1.angle)) > 0) 
-        {
-            player1.score++;
-            if (checkGameEnd(player1.score)) gameEnd(player1.playerNo);
-        }
-        else 
-        {
-            player2.score++;
-            if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
-        }
-
-        ball1.angle = PI - ball1.angle;
-        // ball1.dy = 0;
-
-        Sleep(2000);
-    }
-
-    // Try that the bars does not go out of the screen
-    // Left side bar
-    if (player2.barY >= (screenHeight - borderBridth - player2.height)) 
-    {
-        player2.barY = screenHeight - borderBridth - player2.height;
-    }
-    else if (player2.barY <= borderBridth) player2.barY = borderBridth;
-
-    // Right side bar
-    if (player1.barY >= (screenHeight - borderBridth - player1.height)) 
-    {
-        player1.barY = screenHeight - borderBridth - player1.height;
-        player1.barMoveState = 1;
-    }
-    else if (player1.barY <= borderBridth) 
-    {
-        player1.barY = borderBridth;
-        player1.barMoveState = -1;
-    }
-    else
-    {
-        player1.barMoveState = 0;
-    }
 
 }
 
@@ -332,10 +219,12 @@ void instructionPage()
 
 void clickSound()
 {
-    PlaySoundW(L"./sounds/click003.wav", NULL, SND_ASYNC | SND_ALIAS);
+    PlaySound(TEXT("./sounds/click003.wav"), NULL, SND_ASYNC | SND_ALIAS);
 }
 
-void ballHitWallSound()
+void hitSound()
 {
-    PlaySoundW(L"./sounds/ballhitwall002.wav", NULL, SND_ASYNC | SND_ALIAS);
+    PlaySound(TEXT(".\\sounds\\paddleHit002.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    // Sleep(10);
+    // PlaySound(NULL, 0, 0);
 }

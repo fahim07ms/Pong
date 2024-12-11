@@ -8,16 +8,32 @@
 #define windows_h
 #endif	
 
-#define PI 3.1416
+#define PI 3.141592654
+#define DEFAULT_SETTING {.maxScore = 10, .serveSlow = true, .whoServesFirst = 0, .keyboardSensitivity = 1, .soundOn = true};
+
 int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
 int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
 
 int menuButtonHovered = -1;
 int playerButtonHovered = -1;
-int maxScore = 5;
 int prevPage = -1;
 int controlButtonHovered = -1;
 int player1ControlIsMouse = 0;
+int currentPage = -1;
+
+bool ballServed = false;
+double ballVelocity[2] = {8.0, 18.0};
+enum sound{CLICK, HIT};
+
+struct Settings {
+    int maxScore;
+    bool serveSlow;
+    int whoServesFirst;
+    int keyboardSensitivity;
+    bool soundOn;
+};
+
+struct Settings Setting  =  DEFAULT_SETTING;
 
 double verticalCollisionDistance = 0;
 
@@ -27,18 +43,15 @@ struct Balls {
     double velocity;
     double angle;
     double radius;
-    double dx;
-    double dy;
 };
 
-struct Balls ball1 = {.x = 768,
-                      .y = 400,
-                      .velocity = 12,
-                      .angle = 0,
-                      .radius = 12
-                    //   .dx = -5,
-                    //   .dy = 5
-            };
+struct Balls ball1 = {
+    .x = 768,
+    .y = 400,
+    .velocity = ballVelocity[0],
+    .angle = 0,
+    .radius = 12
+};
 
 int borderBridth = 20;
 
@@ -52,32 +65,39 @@ struct Players {
     int barDY;
     int barMoveState;
     int score;
-    double maxSpeed;
+    int destination;
+    int maxSpeed;
 };
 
-struct Players player1 = { .playerNo = 1, 
-                           .isComputer = 0, 
-                           .width = 16, 
-                           .height = 100,  
-                           .barX = 1536 - 235, 
-                           .barY = 350, 
-                           .barDY = 30, 
-                           .barMoveState = 0,
-                           .score = 0,
-                           .maxSpeed = 2.0
-                           };
+struct Players player1 = { 
+    .playerNo = 1, 
+    .isComputer = 0, 
+    .width = 16, 
+    .height = 100,  
+    .barX = 1536 - 235, 
+    .barY = 350, 
+    .barDY = 70, 
+    .barMoveState = 0,
+    .score = 0,
+    .destination = 350,
+    .maxSpeed = 10
+};
 
 struct Players player2 = {
-                           .playerNo = 2, 
-                           .isComputer = 1, 
-                           .width = 16, 
-                           .height = 100,  
-                           .barX = 220, 
-                           .barY = 350, 
-                           .barDY = 30, 
-                           .barMoveState = 0,
-                           .score = 0
-                           };
+    .playerNo = 2, 
+    .isComputer = 1, 
+    .width = 16, 
+    .height = 100,  
+    .barX = 220, 
+    .barY = 350, 
+    .barDY = 70, 
+    .barMoveState = 0,
+    .score = 0,
+    .destination = 350,
+    .maxSpeed = 10
+};
+
+int ballServer = player1.playerNo;
 
 // Colors
 int violet[3] = {124, 23, 255};
@@ -85,10 +105,6 @@ int black[3] = {4, 4, 4};
 
 // If there is any game to resume or not
 int haveResume = 0;
-
-// Prototypes
-void ballHitWallSound();
-void hitSound();
 
 double responsiveX(double x)
 {
@@ -105,20 +121,13 @@ int menuLeftMargin = 1000;
 
 // Menu Options Image
 char menuOptions[5][100] = {".\\assets\\images\\resume.bmp", ".\\assets\\images\\newGame.bmp", ".\\assets\\images\\settings.bmp", ".\\assets\\images\\instructions.bmp", ".\\assets\\images\\exit.bmp"};
-
+char settingsMaxScore[4][100] = {".\\assets\\maxscore5.bmp", ".\\assets\\maxscore10.bmp", ".\\assets\\maxscore15.bmp", ".\\assets\\maxscore20.bmp"};
+char yesNo[2][100] = {".\\assets\\settings\\yes.bmp", ".\\assets\\settings\\no.bmp"};
+char whoServesFirst[3][100] = {".\\assets\\settings\\scorer.bmp", ".\\assets\\settings\\alternate.bmp", ".\\assets\\settings\\loser.bmp"};
+char keyboardSensitivity[2][100] = {".\\assets\\settings\\low.bmp", ".\\assets\\settings\\high.bmp"};
 void drawHomePage()
 {
-
-    // double sideMargin = responsiveX(60);
-    // double topMargin = responsiveY(100);
-    // double lineHeight = 32;
-
-    // iSetColor(black[0], black[1], black[2]);
-    // iFilledRectangle(0, 0, screenWidth, screenHeight);
-
     iShowBMP(0, 0, ".\\assets\\images\\logo.bmp");
-
-    
 
     int i = (haveResume) ? 0 : 1;
     for (; i < 5; i++) 
@@ -154,7 +163,7 @@ void drawHomePage()
 
 bool checkGameEnd(int score)
 {
-    return score == maxScore;
+    return score == Setting.maxScore;
 }
 
 void gameEnd(int playerNo)
@@ -199,32 +208,112 @@ void drawGamePage()
     iSetColor(255, 255, 255);
     iFilledRectangle(player1.barX, player1.barY, player1.width, player1.height);
     iFilledRectangle(player2.barX, player2.barY, player2.width, player2.height);
-    
-
-    
-
 }
 
 
 void drawSettingsPage()
 {
+    iShowBMP(0, 0, ".\\assets\\settings_menu.bmp");
+
+    
+    // for (int i = 0; i < screenWidth; i += 20)
+    // {
+    //     iSetColor(255, 0, 0);
+    //     iLine(i, 0, i, screenHeight);
+    //     iSetColor(255, 255, 255);
+    //     char str[50];
+    //     sprintf(str, "%d", i);
+    //     iText(i, 0, str, GLUT_BITMAP_HELVETICA_10);
+    // }
+    // for (int i = 0; i < screenHeight; i += 20)
+    // {
+    //     iSetColor(255, 0, 0);
+    //     iLine(0, i, screenWidth, i);
+    //     iSetColor(255, 255, 255);
+    //     char str[50];
+    //     sprintf(str, "%d", i);
+    //     iText(0, i, str, GLUT_BITMAP_HELVETICA_10);
+    // }
+
+    // For max score
+    for (int i = 0; i < 4; i++)
+    {
+        if ((i + 1) * 5 == Setting.maxScore)
+        {
+            iSetColor(violet[0], violet[1], violet[2]);
+            iFilledRectangle(720 + 180*i, 560, 140, 70);
+            iShowBMP2(720 + 180*i, 560, settingsMaxScore[i], 0);
+        }
+        else iShowBMP(720 + 180*i, 560, settingsMaxScore[i]);
+    }
+
+    // For slow serve
+    for (int i = 0; i < 2; i++)
+    {
+        if (!Setting.serveSlow == i)
+        {
+            iSetColor(violet[0], violet[1], violet[2]);
+            iFilledRectangle(720 + 180*i, 445, 140, 65);
+            iShowBMP2(720 + 180*i, 445, yesNo[i], 0);
+        }
+        else iShowBMP(720 + 180*i, 445, yesNo[i]);
+    }
+
+    // For keyboard sensitivity
+    for (int i = 0; i < 2; i++)
+    {
+        if (Setting.keyboardSensitivity == i)
+        {
+            iSetColor(violet[0], violet[1], violet[2]);
+            iFilledRectangle(720 + 180*i, 340, 140, 65);
+            iShowBMP2(720 + 180*i, 340, keyboardSensitivity[i], 0);
+        }
+        else iShowBMP(720 + 180*i, 340, keyboardSensitivity[i]);
+    }
+
+    // For who serves first
+    for (int i = 0; i < 3; i++)
+    {
+        if (Setting.whoServesFirst == (i-1))
+        {
+            iSetColor(violet[0], violet[1], violet[2]);
+            iFilledRectangle(720 + 270*i, 230, 250, 65);
+            iShowBMP2(720 + 270*i, 230, whoServesFirst[i], 0);
+        }
+        else iShowBMP(720 + 270*i, 230, whoServesFirst[i]);
+    }
+
+    // For sound
+    for (int i = 0; i < 2; i++)
+    {
+        if (!Setting.soundOn == i)
+        {
+            iSetColor(violet[0], violet[1], violet[2]);
+            iFilledRectangle(720 + 180*i, 130, 140, 65);
+            iShowBMP2(720 + 180*i, 130, yesNo[i], 0);
+        }
+        else iShowBMP(720 + 180*i, 130, yesNo[i]);
+    }
 
 }
 
-void instructionPage()
+void drawInstructionPage()
 {
 
 }
 
-
-void clickSound()
+void playSound(sound snd)
 {
-    PlaySound(TEXT("./sounds/click003.wav"), NULL, SND_ASYNC | SND_ALIAS);
-}
-
-void hitSound()
-{
-    PlaySound(TEXT(".\\sounds\\paddleHit002.wav"), NULL, SND_FILENAME | SND_ASYNC);
-    // Sleep(10);
-    // PlaySound(NULL, 0, 0);
+    if (Setting.soundOn)
+    {
+        switch (snd)
+        {
+            case CLICK:
+                PlaySound(TEXT("./sounds/click0012.wav"), NULL, SND_ASYNC | SND_ALIAS);
+                break;
+            case HIT:
+                PlaySound(TEXT(".\\sounds\\paddleHit002.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                break;
+        }
+    }
 }

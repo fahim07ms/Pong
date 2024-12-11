@@ -17,81 +17,67 @@ extern int screenWidth;
 extern int screenHeight;
 extern int menuTopMargin;
 extern int menuLeftMargin;
-extern int prevPage, menuButtonHovered, playerButtonHovered, controlButtonHovered;
+extern int prevPage,currentPage, menuButtonHovered, playerButtonHovered, controlButtonHovered;
 extern int player1ControlIsMouse;
+extern int ballServer;
 
-// Mouse Positions
-int mouseX = 0;
-int mouseY = 0; 
-
-// Pages
-int currentPage = -1;
-
-
-
-void update_game()
+void update_bar1()
 {
-	// Always change the ball's X and Y value
-    ball1.x += (ball1.velocity * cos(ball1.angle));
-    ball1.y += (ball1.velocity * sin(ball1.angle));
-    // ball1.x += ball1.dx;
-    // ball1.y += ball1.dy;
+	if(!player1ControlIsMouse) 
+	{
+		if (player1.destination != player1.barY)
+		{
+			if (player1.barY < player1.destination) player1.barY += player1.maxSpeed;
+			else player1.barY -= player1.maxSpeed;
+		}
+	}
+}
 
-    // Change the y aixs of 1st bar according to the ball
-    // If the ball hits the top or bottom borders
-    if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
-    {
-    	ball1.angle = -ball1.angle;
-        hitSound();
-        // ball1.dy = -ball1.dy;
-    }
+void update_bar2()
+{
+	if (player2.destination != player2.barY)
+	{
+		if (player2.barY < player2.destination) player2.barY += player2.maxSpeed;
+		else player2.barY -= player2.maxSpeed;
+	}
+} 
 
-    // For the left side bar (Player 2)
-    // When the ball hits in left bar area
-    if ((ball1.x < (player2.barX + player2.width + ball1.radius) && ball1.x > (player2.barX + (player2.width/2)) ) && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
-    {
-        hitSound();
-        ball1.x = player2.barX + player2.width + ball1.radius;
-        // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
-        ball1.angle = (PI/2)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
-    }
-    // When the ball hits in right bar area
-    if ((ball1.x + ball1.radius > player1.barX && (ball1.x < player1.barX + player1.width / 2)) && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
-    {
-        hitSound();
-        ball1.x = player1.barX - ball1.radius;
-        ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
-        
-        if (player2.isComputer)
-        {
-            double vy = ball1.velocity * sin(ball1.angle);
-            verticalCollisionDistance = (vy * (screenWidth - 440)) / (ball1.velocity * cos(ball1.angle));
-            verticalCollisionDistance = verticalCollisionDistance > 0 ? verticalCollisionDistance : -verticalCollisionDistance;
-            
-            int closeBounce = (vy > 0) ? screenHeight - 20 - ball1.y : ball1.y - 20;
-            if (verticalCollisionDistance > closeBounce) 
-            {
-                verticalCollisionDistance -= closeBounce;
-                while (verticalCollisionDistance > screenHeight - 40)
-                {
-                    verticalCollisionDistance -= (screenHeight - 40);
+void aiMove()
+{
+	double vy = ball1.velocity * sin(ball1.angle);
+	verticalCollisionDistance = (vy * (screenWidth - 440)) / (ball1.velocity * cos(ball1.angle));
+	verticalCollisionDistance = verticalCollisionDistance > 0 ? verticalCollisionDistance : -verticalCollisionDistance;
+	
+	int closeBounce = (vy > 0) ? screenHeight - 20 - ball1.y : ball1.y - 20;
+	if (verticalCollisionDistance > closeBounce) 
+	{
+		verticalCollisionDistance -= closeBounce;
+		while (verticalCollisionDistance > screenHeight - 40)
+		{
+			verticalCollisionDistance -= (screenHeight - 40);
 
-                    vy = -vy;
-                }
+			vy = -vy;
+		}
 
-                player2.barY = (vy < 0) ? verticalCollisionDistance + 20 : (screenHeight - 20) - verticalCollisionDistance;
+		player2.destination = (vy < 0) ? verticalCollisionDistance + 20 : (screenHeight - 20) - verticalCollisionDistance;
 
-            }
-            else 
-            {
-                player2.barY = (vy > 0) ? ball1.y + verticalCollisionDistance : ball1.y - verticalCollisionDistance;
-            }
-        }
-    }
-    
-    
-    // If the ball goes out
-    if ((ball1.x < 200 || ball1.x > (screenWidth - 200)) && (ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + 100 + ball1.radius)) 
+	}
+	else 
+	{
+		player2.destination = (vy > 0) ? ball1.y + verticalCollisionDistance : ball1.y - verticalCollisionDistance;
+	}
+
+	player2.destination = player2.destination - player2.destination % player2.maxSpeed;
+	if ((player2.destination < (screenHeight - borderBridth - player2.height/2) && (player2.destination > borderBridth + player2.height/2))) 
+	{
+		player2.destination = player2.destination - player2.height/2;
+	}
+	printf("%d\n", player2.destination);
+}
+
+void ballGoesOut()
+{
+	if ((ball1.x < 200 || ball1.x > (screenWidth - 200)) && (ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + 100 + ball1.radius)) 
     {
         ball1.x = 768;
         ball1.y = 400;
@@ -107,24 +93,44 @@ void update_game()
             if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
         }
 
-        ball1.angle = ((ball1.velocity + cos(ball1.angle)) > 0) ? 0 : PI;
-        player1.barY = 350;
-        player2.barY = 350;
+		if (Setting.serveSlow) ballServed = false;
+		
+		int playerLost = ((ball1.velocity * cos(ball1.angle)) > 0) ? player1.playerNo : player2.playerNo;
+		switch (Setting.whoServesFirst)
+		{
+			case 1:
+				ballServer = (playerLost == 1) ? 2 : 1;
+				break;
+			case -1:
+				ballServer = (playerLost == 1) ? 1 : 2;
+				break;
+			default:
+				ballServer = ((ball1.velocity * cos(ball1.angle)) > 0) ? 2 : 1;
+				break;
+		}
+
+		ball1.angle = (ballServer == 1) ? 0 : PI;
+        player1.barY = 400;
+        player2.barY = 400;
+		player1.destination = player1.barY;
+		player2.destination = player2.barY;
         // ball1.dy = 0;
 
         Sleep(3000);
     }
+}
 
-    // Try that the bars does not go out of the screen
-    // Left side bar
-    if (player2.barY >= (screenHeight - borderBridth - player2.height)) 
+void paddleDoesNotCrossBorder()
+{
+	// Left side bar
+    if (player2.destination >= (screenHeight - borderBridth - player2.height)) 
     {
-        player2.barY = screenHeight - borderBridth - player2.height;
+        player2.destination = screenHeight - borderBridth - player2.height - screenHeight%(player2.maxSpeed);
         player2.barMoveState = 1;
     }
-    else if (player2.barY <= borderBridth) 
+    else if (player2.destination <= borderBridth) 
     {
-        player2.barY = borderBridth;
+        player2.destination = borderBridth;
         player2.barMoveState = -1;
     }
     else 
@@ -133,14 +139,14 @@ void update_game()
     }
 
     // Right side bar
-    if (player1.barY >= (screenHeight - borderBridth - player1.height)) 
+    if (player1.destination >= (screenHeight - borderBridth - player1.height)) 
     {
-        player1.barY = screenHeight - borderBridth - player1.height;
+        player1.destination = screenHeight - borderBridth - player1.height;
         player1.barMoveState = 1;
     }
-    else if (player1.barY <= borderBridth) 
+    else if (player1.destination <= borderBridth) 
     {
-        player1.barY = borderBridth;
+        player1.destination = borderBridth;
         player1.barMoveState = -1;
     }
     else
@@ -149,7 +155,70 @@ void update_game()
     }
 }
 
-void iDraw() {
+void update_game()
+{
+	if (!ballServed) ball1.velocity = ballVelocity[0];
+	
+	// Always change the ball's X and Y value
+    ball1.x += (ball1.velocity * cos(ball1.angle));
+    ball1.y += (ball1.velocity * sin(ball1.angle));
+
+    // Change the y aixs of 1st bar according to the ball
+    // If the ball hits the top or bottom borders
+    if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
+    {
+    	ball1.angle = -ball1.angle;
+        playSound(HIT);
+    }
+
+    // For the left side bar (Player 2)
+    // When the ball hits in left bar area
+    if ((ball1.x < (player2.barX + player2.width + ball1.radius) && ball1.x > (player2.barX + (player2.width/2)) ) && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
+    {
+        playSound(HIT);
+        ball1.x = player2.barX + player2.width + ball1.radius;
+        // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
+        ball1.angle = (PI/2)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
+
+		if (player2.isComputer) player2.destination =  380;
+
+		if (!ballServed && ballServer == player2.playerNo) 
+		{
+			ball1.velocity = ballVelocity[1];
+			ballServed = true;	
+		}
+    }
+
+	//if ((ball1.velocity * cos(ball1.angle)) > 0 && player2.isComputer) player2.destination = ball1.y; 
+    // When the ball hits in right bar area
+    if ((ball1.x + ball1.radius > player1.barX && (ball1.x < player1.barX + player1.width / 2)) && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
+    {
+        playSound(HIT);
+        ball1.x = player1.barX - ball1.radius;
+        ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
+        
+		if (!ballServed && ballServer == player1.playerNo) 
+		{
+			ball1.velocity = ballVelocity[1];
+			ballServed = true;	
+		}
+
+        if (player2.isComputer)
+        {
+            aiMove();
+        }
+    }
+
+    // If the ball goes out
+    ballGoesOut();
+
+    // Try that the bars does not go out of the screen
+    paddleDoesNotCrossBorder();
+
+}
+
+void iDraw() 
+{
 	//place your drawing codes here
 	iClear();
 	
@@ -203,30 +272,37 @@ void iDraw() {
         }
         else iShowBMP2(445, 270, ".\\assets\\menu\\keyboard.bmp", 0);
 	}
+	else if (currentPage == 2)
+	{
+		drawSettingsPage();
+	}
 	
 }
 
 /*
 	function iMouseMove() is called when the user presses and	 the mouse.
 	(mx, my) is the position where the mouse pointer is.
-	*/
-void iMouseMove(int mx, int my) {
+*/
+void iMouseMove(int mx, int my) 
+{
 	
 }
 
 /*
 	function iMouse() is called when the user presses/releases the mouse.
 	(mx, my) is the position where the mouse pointer is.
-	*/
-void iMouse(int button, int state, int mx, int my) {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+*/
+void iMouse(int button, int state, int mx, int my) 
+{
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) 
+	{
 		if (currentPage == -1)
 		{
-			clickSound();
 			for (int i = 0; i < 5; i++)
 			{
 				if ((mx >= 980 && mx <= 1430) && (my + 25 >= (menuTopMargin - 100*i) && my + 25 <= (menuTopMargin - 100*i + 80)))
 				{
+					playSound(CLICK);
 					if (i == 4) exit(0);
 					else 
 					{
@@ -262,28 +338,86 @@ void iMouse(int button, int state, int mx, int my) {
 		{
 			if ((mx >= 450 && mx <= 1070) && (my + 25 >= 430 && my + 25 <= 530))
 			{
+				playSound(CLICK);
 				player2.isComputer = 1;
 				currentPage = 21;
 			}
 			else if ((mx >= 450 && mx <= 1070) && (my + 25 >= 260 && my + 25 <= 370))
 			{
+				playSound(CLICK);
 				player2.isComputer = 0;
 				currentPage = 1;
 				iSetTimer(10, update_game);
+				iSetTimer(10, update_bar1);
+				iSetTimer(10, update_bar2);
 			}
 		}
 		else if (currentPage == 21)
 		{
 			if ((mx >= 450 && mx <= 1070) && (my + 25 >= 430 && my + 25 <= 530))
 			{
+				playSound(CLICK);
 				player1ControlIsMouse = 1;
 				currentPage = 1;
 				iSetTimer(10, update_game);
+				iSetTimer(10, update_bar1);
+				iSetTimer(10, update_bar2);
 			}
 			else if ((mx >= 450 && mx <= 1070) && (my + 25 >= 260 && my + 25 <= 370))
 			{
+				playSound(CLICK);
 				player1ControlIsMouse = 0;
 				currentPage = 1;
+				iSetTimer(10, update_game);
+				iSetTimer(10, update_bar1);
+				iSetTimer(10, update_bar2);
+			}
+		}
+		else if (currentPage == 2)
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				if (mx >= 720 + 180*i && mx <= 860 + 180*i && my >= 560 - 20 && my <= 630 - 10)
+				{
+					playSound(CLICK);
+					Setting.maxScore = (i+1)*5;
+				}
+			}
+
+			for (int i = 0; i < 2; i++)
+			{
+				if (mx >= 720 + 180*i && mx <= 860 + 180*i && my >= 445 - 20 && my <= 510 - 10)
+				{
+					playSound(CLICK);
+					Setting.serveSlow = !i;
+				}
+			}
+
+			for (int i = 0; i < 2; i++)
+			{
+				if (mx >= 720 + 180*i  && mx <= 860 + 180*i && my >= 130 - 50 && my <= 195 - 50)
+				{
+					playSound(CLICK);
+					Setting.soundOn = !i;
+				}
+			}
+
+			for (int i = 0; i < 3; i++)
+			{
+				if (mx >= 720 + 270*i && mx <= 970 + 270*i && my >= 230 - 50 && my <= 295 - 50)
+				{
+					playSound(CLICK);
+					Setting.whoServesFirst = i-1;
+				}
+			}
+			
+			for (int i = 0; i < 2; i++)
+			{
+				if (mx >= 720 + 180*i && mx <= 860 + 180*i && my >= 340 - 50 && my <= 405 - 50)
+				{
+					playSound(CLICK);
+					Setting.keyboardSensitivity = i;
+				}
 			}
 		}
 	}
@@ -352,8 +486,9 @@ void iPassiveMouseMove(int mx, int my)
 /*
 	function iKeyboard() is called whenever the user hits a key in keyboard.
 	key- holds the ASCII value of the key pressed.
-	*/
-void iKeyboard(unsigned char key) {
+*/
+void iKeyboard(unsigned char key) 
+{
 	if (key == 'q') {
 		printf("%d %d\n", screenWidth, screenHeight);
 		exit(0);
@@ -370,16 +505,14 @@ void iKeyboard(unsigned char key) {
 	{
 		if (key == 'w' && player2.barMoveState != 1)
 		{
-			player2.barY += player2.barDY;
+			player2.destination = player2.barY + player2.barDY;
 		}
-		if (key == 's' && player2.barMoveState != -1)
+		if (key == 'x' && player2.barMoveState != -1)
 		{
-			player2.barY -= player2.barDY;
+			player2.destination = player2.barY - player2.barDY;
 		}
 	}
-	//place your codes for other keys here
 }
-
 /*
 	function iSpecialKeyboard() is called whenver user hits special keys like-
 	function keys, home, end, pg up, pg down, arraows etc. you have to use
@@ -388,31 +521,28 @@ void iKeyboard(unsigned char key) {
 	GLUT_KEY_F7, GLUT_KEY_F8, GLUT_KEY_F9, GLUT_KEY_F10, GLUT_KEY_F11, GLUT_KEY_F12,
 	GLUT_KEY_LEFT, GLUT_KEY_UP, GLUT_KEY_RIGHT, GLUT_KEY_DOWN, GLUT_KEY_PAGE UP,
 	GLUT_KEY_PAGE DOWN, GLUT_KEY_HOME, GLUT_KEY_END, GLUT_KEY_INSERT
-	*/
-void iSpecialKeyboard(unsigned char key) {
-
+*/
+void iSpecialKeyboard(unsigned char key) 
+{
 	if (key == GLUT_KEY_END) 
 	{
 		exit(0);
 	}
 	if (key == GLUT_KEY_UP && player1.barMoveState != 1 && !player1ControlIsMouse)
 	{
-		player1.barY += player1.barDY;
+		player1.destination = player1.barY + player1.barDY;
 	}
 	if (key == GLUT_KEY_DOWN && player1.barMoveState != -1 && !player1ControlIsMouse)
 	{
-		player1.barY -= player1.barDY;
+		player1.destination = player1.barY - player1.barDY;
 	}
 	//place your codes for other keys here
 }
 
-
-
-int main() {
+int main() 
+{
 	//place your own initialization codes here.
-
+	//if (currentPage == 1) iSetTimer()
 	iInitialize(screenWidth, screenHeight, "The Pong Game");
-	
 	return 0;
 }
-

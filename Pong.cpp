@@ -20,6 +20,8 @@ extern int menuLeftMargin;
 extern int prevPage,currentPage, menuButtonHovered, playerButtonHovered, controlButtonHovered;
 extern int player1ControlIsMouse;
 extern int ballServer;
+extern int backButtonHovered, pauseButtonHovered;
+extern bool haveResume, gameHasEnd, gameHasStarted;
 
 void update_bar1()
 {
@@ -72,12 +74,11 @@ void aiMove()
 	{
 		player2.destination = player2.destination - player2.height/2;
 	}
-	printf("%d\n", player2.destination);
 }
 
 void ballGoesOut()
 {
-	if ((ball1.x < 200 || ball1.x > (screenWidth - 200)) && (ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + 100 + ball1.radius)) 
+	if ((ball1.x + ball1.radius < 200 || ball1.x - ball1.radius > (screenWidth - 200)) && (ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + 100 + ball1.radius)) 
     {
         ball1.x = 768;
         ball1.y = 400;
@@ -95,7 +96,7 @@ void ballGoesOut()
 
 		if (Setting.serveSlow) ballServed = false;
 		
-		int playerLost = ((ball1.velocity * cos(ball1.angle)) > 0) ? player1.playerNo : player2.playerNo;
+		int playerLost = ((ball1.velocity * cos(ball1.angle)) > 0) ? player2.playerNo : player1.playerNo;
 		switch (Setting.whoServesFirst)
 		{
 			case 1:
@@ -105,13 +106,13 @@ void ballGoesOut()
 				ballServer = (playerLost == 1) ? 1 : 2;
 				break;
 			default:
-				ballServer = ((ball1.velocity * cos(ball1.angle)) > 0) ? 2 : 1;
+				ballServer = (ballServer == 1) ? 2 : 1;
 				break;
 		}
 
 		ball1.angle = (ballServer == 1) ? 0 : PI;
-        player1.barY = 400;
-        player2.barY = 400;
+        player1.barY = 350;
+        player2.barY = 350;
 		player1.destination = player1.barY;
 		player2.destination = player2.barY;
         // ball1.dy = 0;
@@ -123,7 +124,7 @@ void ballGoesOut()
 void paddleDoesNotCrossBorder()
 {
 	// Left side bar
-    if (player2.destination >= (screenHeight - borderBridth - player2.height)) 
+    if (player2.destination >= screenHeight - borderBridth - player2.height - screenHeight%(player2.maxSpeed)) 
     {
         player2.destination = screenHeight - borderBridth - player2.height - screenHeight%(player2.maxSpeed);
         player2.barMoveState = 1;
@@ -139,9 +140,9 @@ void paddleDoesNotCrossBorder()
     }
 
     // Right side bar
-    if (player1.destination >= (screenHeight - borderBridth - player1.height)) 
+    if (player1.destination >= (screenHeight - borderBridth - player1.height - screenHeight%(player1.maxSpeed))) 
     {
-        player1.destination = screenHeight - borderBridth - player1.height;
+        player1.destination = screenHeight - borderBridth - player1.height - screenHeight%(player1.maxSpeed);
         player1.barMoveState = 1;
     }
     else if (player1.destination <= borderBridth) 
@@ -157,64 +158,67 @@ void paddleDoesNotCrossBorder()
 
 void update_game()
 {
-	if (!ballServed) ball1.velocity = ballVelocity[0];
-	
-	// Always change the ball's X and Y value
-    ball1.x += (ball1.velocity * cos(ball1.angle));
-    ball1.y += (ball1.velocity * sin(ball1.angle));
+	if (!gameHasEnd && !haveResume && gameHasStarted)
+	{
+		if (!ballServed) ball1.velocity = ballVelocity[0];
 
-    // Change the y aixs of 1st bar according to the ball
-    // If the ball hits the top or bottom borders
-    if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
-    {
-    	ball1.angle = -ball1.angle;
-        playSound(HIT);
-    }
-
-    // For the left side bar (Player 2)
-    // When the ball hits in left bar area
-    if ((ball1.x < (player2.barX + player2.width + ball1.radius) && ball1.x > (player2.barX + (player2.width/2)) ) && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
-    {
-        playSound(HIT);
-        ball1.x = player2.barX + player2.width + ball1.radius;
-        // printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
-        ball1.angle = (PI/2)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
-
-		if (player2.isComputer) player2.destination =  380;
-
-		if (!ballServed && ballServer == player2.playerNo) 
+		// Change the y aixs of 1st bar according to the ball
+		// If the ball hits the top or bottom borders
+		if (ball1.y < borderBridth + ball1.radius || ball1.y > (screenHeight - borderBridth - ball1.radius)) 
 		{
-			ball1.velocity = ballVelocity[1];
-			ballServed = true;	
+			ball1.angle = -ball1.angle;
+			playSound(HIT);
 		}
-    }
+		
+		// Always change the ball's X and Y value
+		ball1.x += (ball1.velocity * cos(ball1.angle));
+		ball1.y += (ball1.velocity * sin(ball1.angle));
 
-	//if ((ball1.velocity * cos(ball1.angle)) > 0 && player2.isComputer) player2.destination = ball1.y; 
-    // When the ball hits in right bar area
-    if ((ball1.x + ball1.radius > player1.barX && (ball1.x < player1.barX + player1.width / 2)) && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
-    {
-        playSound(HIT);
-        ball1.x = player1.barX - ball1.radius;
-        ball1.angle = PI - (PI/2)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
-        
-		if (!ballServed && ballServer == player1.playerNo) 
+		// For the left side bar (Player 2)
+		// When the ball hits in left bar area
+		if ((ball1.x < (player2.barX + player2.width + ball1.radius) && ball1.x > (player2.barX + (player2.width/2)) ) && !(ball1.y < player2.barY - ball1.radius || ball1.y > player2.barY + player2.height + ball1.radius))
 		{
-			ball1.velocity = ballVelocity[1];
-			ballServed = true;	
+			playSound(HIT);
+			ball1.x = player2.barX + player2.width + ball1.radius;
+			// printf("BallY: %lf, Player2.BarY: %lf , Player2.width: %lf\n", ball1.y, player2.barY, player2.width);
+			ball1.angle = (PI/3)*((ball1.y - player2.barY - player2.height/2)/(player2.height));
+
+			if (!ballServed && ballServer == player2.playerNo) 
+			{
+				ball1.velocity = (player2.isComputer) ? ballVelocity[2] : ballVelocity[1];
+				ballServed = true;	
+			}
 		}
 
-        if (player2.isComputer)
-        {
-            aiMove();
-        }
-    }
+		//if ((ball1.velocity * cos(ball1.angle)) > 0 && player2.isComputer) player2.destination = ball1.y; 
+		// When the ball hits in right bar area
+		if ((ball1.x + ball1.radius > player1.barX && (ball1.x < player1.barX + player1.width / 2)) && !(ball1.y < player1.barY - ball1.radius || ball1.y > player1.barY + player1.height + ball1.radius))
+		{
+			playSound(HIT);
+			ball1.x = player1.barX - ball1.radius;
+			ball1.angle = PI - (PI/3)*((ball1.y - player1.barY - player1.height/2)/(player1.height));
+			
+			if (!ballServed && ballServer == player1.playerNo) 
+			{
+				ball1.velocity = (player2.isComputer) ? ballVelocity[2] : ballVelocity[1];
+				ballServed = true;	
+			}
 
-    // If the ball goes out
-    ballGoesOut();
+			if (player2.isComputer)
+			{
+				aiMove();
+			}
+		}
 
-    // Try that the bars does not go out of the screen
-    paddleDoesNotCrossBorder();
+		// If the ball goes out
+		ballGoesOut();
 
+		// Try that the bars does not go out of the screen
+		paddleDoesNotCrossBorder();
+
+
+		printf("BallX: %lf, BallY: %lf, Ball veclocity: %lf, Ball angle: %lf, vx: %lf, vy: %lf\n", ball1.x, ball1.y, ball1.velocity, ball1.angle, (ball1.velocity * cos(ball1.angle)), (ball1.velocity * sin(ball1.angle)));
+	}
 }
 
 void iDraw() 
@@ -234,6 +238,7 @@ void iDraw()
 	{
 		iSetColor(4, 4, 4);
 		iFilledRectangle(0, 0, screenWidth, screenHeight);
+		drawBackButton();
 
 		if (playerButtonHovered == 1)
         {
@@ -255,6 +260,7 @@ void iDraw()
 	{
 		iSetColor(4, 4, 4);
 		iFilledRectangle(0, 0, screenWidth, screenHeight);
+		drawBackButton();
 
 		if (controlButtonHovered == 1)
         {
@@ -302,14 +308,37 @@ void iMouse(int button, int state, int mx, int my)
 			{
 				if ((mx >= 980 && mx <= 1430) && (my + 25 >= (menuTopMargin - 100*i) && my + 25 <= (menuTopMargin - 100*i + 80)))
 				{
-					playSound(CLICK);
-					if (i == 4) exit(0);
-					else 
+					prevPage = currentPage;
+					playSound(CLICK);	
+					switch(i)
 					{
-						if (i == 1) currentPage = 11;
-						else currentPage = i;
+						case 0:
+							if (haveResume) 
+							{
+								haveResume = 0;
+								currentPage = 1;
+								break;
+							}
+							else continue;
+							break;
+						case 1:
+							if (haveResume)
+							{
+								gameRestart();
+								haveResume = false;
+							}
+							currentPage = 11;
+							break;
+						case 2:
+							currentPage = 2;
+							break;
+						case 3:
+							currentPage = 3;
+							break;
+						case 4:
+							exit(0);
+							break;
 					}
-
 				}
 			}
 			// if ((mx >= 1000  && mx <= 1260) && (my >= 680 && my <= 740))
@@ -334,31 +363,71 @@ void iMouse(int button, int state, int mx, int my)
 			// 	exit(0);
 			// }
 		}
+		else if (currentPage == 1)
+		{
+			if (mx >= 18 && mx <= 78 && my >= screenHeight - 85 && my <= screenHeight - 25)
+			{
+				gamePaused();
+			}
+
+			if (haveResume)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					if (mx >= 560 && mx <= 1000 && my >= 460 - 80*i - 30 && my <= 525 - 80*i - 30)
+					{
+						switch (i)
+						{
+							case 0:
+								haveResume = 0;
+								break;
+							case 1:
+								gameRestart();
+								break;
+							case 2:
+								prevPage = currentPage;
+								currentPage = 2;
+								break;
+							case 3:
+								currentPage = -1;
+								break;
+						}
+					}
+				}
+			}
+		}
 		else if (currentPage == 11)
 		{
 			if ((mx >= 450 && mx <= 1070) && (my + 25 >= 430 && my + 25 <= 530))
 			{
 				playSound(CLICK);
 				player2.isComputer = 1;
+				prevPage = currentPage;
 				currentPage = 21;
 			}
 			else if ((mx >= 450 && mx <= 1070) && (my + 25 >= 260 && my + 25 <= 370))
 			{
 				playSound(CLICK);
 				player2.isComputer = 0;
+				prevPage = currentPage;
 				currentPage = 1;
+				gameHasStarted = true;
 				iSetTimer(10, update_game);
 				iSetTimer(10, update_bar1);
 				iSetTimer(10, update_bar2);
 			}
+
+			backButtonClicked(mx, my);
 		}
 		else if (currentPage == 21)
 		{
 			if ((mx >= 450 && mx <= 1070) && (my + 25 >= 430 && my + 25 <= 530))
 			{
 				playSound(CLICK);
+				prevPage = currentPage;
 				player1ControlIsMouse = 1;
 				currentPage = 1;
+				gameHasStarted = true;
 				iSetTimer(10, update_game);
 				iSetTimer(10, update_bar1);
 				iSetTimer(10, update_bar2);
@@ -366,12 +435,16 @@ void iMouse(int button, int state, int mx, int my)
 			else if ((mx >= 450 && mx <= 1070) && (my + 25 >= 260 && my + 25 <= 370))
 			{
 				playSound(CLICK);
+				prevPage = currentPage;
 				player1ControlIsMouse = 0;
 				currentPage = 1;
+				gameHasStarted = true;
 				iSetTimer(10, update_game);
 				iSetTimer(10, update_bar1);
 				iSetTimer(10, update_bar2);
 			}
+
+			backButtonClicked(mx, my);
 		}
 		else if (currentPage == 2)
 		{
@@ -419,6 +492,8 @@ void iMouse(int button, int state, int mx, int my)
 					Setting.keyboardSensitivity = i;
 				}
 			}
+
+			backButtonClicked(mx, my);
 		}
 	}
 	
@@ -439,20 +514,37 @@ void iPassiveMouseMove(int mx, int my)
 			else menuButtonHovered = -1;
 		}
 	}
-	else if (currentPage == 1 && player1ControlIsMouse)
+	else if (currentPage == 1)
 	{
-		if (my >= (screenHeight - borderBridth - player1.height)) 
+		if (player1ControlIsMouse && !haveResume)
 		{
-			player1.barY = screenHeight - borderBridth - player1.height;
+			if (my >= (screenHeight - borderBridth - player1.height)) 
+			{
+				player1.barY = screenHeight - borderBridth - player1.height;
+			}
+			else if (my <= borderBridth)
+			{
+				player1.barY = borderBridth;
+			}
+			else 
+			{
+				player1.barY = my;
+			}
 		}
-		else if (my <= borderBridth)
+		else if (haveResume)
 		{
-			player1.barY = borderBridth;
+			for (int i = 0; i < 4; i++)
+			{
+				if (mx >= 560 && mx <= 1000 && my >= 460 - 80*i - 30 && my <= 525 - 80*i - 30)
+				{
+					pauseMenuButtonHovered = i;
+				}
+				else pauseButtonHovered = -1;
+			}
 		}
-		else 
-		{
-			player1.barY = my;
-		}
+
+		if (mx >= 18 && mx <= 78 && my >= screenHeight - 85 && my <= screenHeight - 25) pauseButtonHovered = 1;
+		else pauseButtonHovered = 0;
 	}
 	else if (currentPage == 11)
 	{
@@ -465,6 +557,8 @@ void iPassiveMouseMove(int mx, int my)
 			playerButtonHovered = 2;
 		}
 		else playerButtonHovered = -1;
+
+		backButtonHover(mx, my);
 	}
 	else if (currentPage == 21)
 	{
@@ -477,6 +571,12 @@ void iPassiveMouseMove(int mx, int my)
 			controlButtonHovered = 2;
 		}
 		else controlButtonHovered = -1;
+
+		backButtonHover(mx, my);
+	}
+	else if (currentPage == 2)
+	{
+		backButtonHover(mx, my);
 	}
 
 	

@@ -10,6 +10,9 @@
 
 #define PI 3.141592654
 #define DEFAULT_SETTING {.maxScore = 10, .serveSlow = true, .whoServesFirst = 0, .keyboardSensitivity = 1, .soundOn = true};
+#define DEFAULT_BALL {.x = 768, .y = 400, .velocity = ballVelocity[0], .angle = 0, .radius = 12};
+#define DEFAULT_PLAYER1 {.playerNo = 1, .isComputer = 0, .width = 16, .height = 100, .barX = 1536 - 235, .barY = 350, .barDY = 70, .barMoveState = 0, .score = 0, .destination = 350, .maxSpeed = 10};
+#define DEFAULT_PLAYER2 {.playerNo = 2, .isComputer = 1, .width = 16, .height = 100,  .barX = 220, .barY = 350, .barDY = 70, .barMoveState = 0,.score = 0,.destination = 350,.maxSpeed = 10};
 
 int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
 int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
@@ -18,11 +21,14 @@ int menuButtonHovered = -1;
 int playerButtonHovered = -1;
 int prevPage = -1;
 int controlButtonHovered = -1;
+int backButtonHovered = 0;
+int pauseButtonHovered = 0;
 int player1ControlIsMouse = 0;
+int pauseMenuButtonHovered = -1;
 int currentPage = -1;
 
 bool ballServed = false;
-double ballVelocity[2] = {8.0, 18.0};
+double ballVelocity[3] = {8.0, 14.0, 20.0};
 enum sound{CLICK, HIT};
 
 struct Settings {
@@ -45,13 +51,7 @@ struct Balls {
     double radius;
 };
 
-struct Balls ball1 = {
-    .x = 768,
-    .y = 400,
-    .velocity = ballVelocity[0],
-    .angle = 0,
-    .radius = 12
-};
+struct Balls ball1 = DEFAULT_BALL;
 
 int borderBridth = 20;
 
@@ -69,33 +69,9 @@ struct Players {
     int maxSpeed;
 };
 
-struct Players player1 = { 
-    .playerNo = 1, 
-    .isComputer = 0, 
-    .width = 16, 
-    .height = 100,  
-    .barX = 1536 - 235, 
-    .barY = 350, 
-    .barDY = 70, 
-    .barMoveState = 0,
-    .score = 0,
-    .destination = 350,
-    .maxSpeed = 10
-};
+struct Players player1 = DEFAULT_PLAYER1;
 
-struct Players player2 = {
-    .playerNo = 2, 
-    .isComputer = 1, 
-    .width = 16, 
-    .height = 100,  
-    .barX = 220, 
-    .barY = 350, 
-    .barDY = 70, 
-    .barMoveState = 0,
-    .score = 0,
-    .destination = 350,
-    .maxSpeed = 10
-};
+struct Players player2 = DEFAULT_PLAYER2;
 
 int ballServer = player1.playerNo;
 
@@ -104,17 +80,9 @@ int violet[3] = {124, 23, 255};
 int black[3] = {4, 4, 4};
 
 // If there is any game to resume or not
-int haveResume = 0;
-
-double responsiveX(double x)
-{
-    return x * (screenWidth * 1.0 / 1536);
-}
-
-double responsiveY(double y)
-{
-    return y * (screenHeight * 1.0 / 840);
-}
+bool haveResume = false;
+bool gameHasEnd = false;
+bool gameHasStarted = false;
 
 int menuTopMargin = 680;
 int menuLeftMargin = 1000;
@@ -125,6 +93,69 @@ char settingsMaxScore[4][100] = {".\\assets\\maxscore5.bmp", ".\\assets\\maxscor
 char yesNo[2][100] = {".\\assets\\settings\\yes.bmp", ".\\assets\\settings\\no.bmp"};
 char whoServesFirst[3][100] = {".\\assets\\settings\\scorer.bmp", ".\\assets\\settings\\alternate.bmp", ".\\assets\\settings\\loser.bmp"};
 char keyboardSensitivity[2][100] = {".\\assets\\settings\\low.bmp", ".\\assets\\settings\\high.bmp"};
+char pauseButtons[4][100] = {".\\assets\\pause\\resume.bmp", ".\\assets\\pause\\restart.bmp", ".\\assets\\pause\\settings.bmp", ".\\assets\\pause\\mainMenu.bmp"};
+
+// Protypes
+void backButtonClicked(int mx, int my);
+void backButtonHover(int mx, int my);
+void drawHomePage();
+bool checkGameEnd(int score);
+void gameEnd(int playerNo);
+void drawGamePage();
+void drawSettingsPage();
+void drawInstructionPage();
+void playSound(sound snd);
+void gamePaused();
+void gameRestart();
+
+void backButtonClicked(int mx, int my)
+{
+    if (mx >= 10 && mx <= 150 && my >= 10-70 && my <= 80-70)
+    {
+        playSound(CLICK);
+        currentPage = prevPage;
+    }
+}
+
+void backButtonHover(int mx, int my)
+{
+    if (mx >= 10 && mx <= 150 && my >= 10-70 && my <= 80-70) backButtonHovered = 1;
+	else backButtonHovered = 0;
+}
+
+void gamePaused()
+{
+    haveResume = 1;
+}
+
+void gameRestart()
+{
+    if (prevPage == 11 || prevPage == 21)
+    {
+        ball1 = DEFAULT_BALL;
+        player1.barX = 1536 - 235;
+        player1.barY = 350,
+        player1.score = 0;
+
+        player2.barX = 220;
+        player2.barY = 350;
+        player2.score = 0;
+
+        haveResume = false;
+        ballServed = false;
+        ballServer = player1.playerNo;
+    }
+    else if (prevPage == -1)
+    {
+        ball1 = DEFAULT_BALL;
+        player1 = DEFAULT_PLAYER1;
+        player2 = DEFAULT_PLAYER2;
+        gameHasStarted = false;
+        ballServed = false;
+        ballServer = player1.playerNo;
+    }
+}
+
 void drawHomePage()
 {
     iShowBMP(0, 0, ".\\assets\\images\\logo.bmp");
@@ -171,6 +202,7 @@ void gameEnd(int playerNo)
     ball1.radius = 0;
     ball1.angle = 0;
     ball1.velocity = 0;
+    gameHasEnd = true;
 }
 
 
@@ -208,8 +240,42 @@ void drawGamePage()
     iSetColor(255, 255, 255);
     iFilledRectangle(player1.barX, player1.barY, player1.width, player1.height);
     iFilledRectangle(player2.barX, player2.barY, player2.width, player2.height);
+
+    if (pauseButtonHovered)
+    {
+        iSetColor(violet[0], violet[1], violet[2]);
+        iFilledRectangle(18, screenHeight - 65, 60, 50);
+        iShowBMP2(18, screenHeight - 65, ".\\assets\\pause\\pause.bmp", 0);
+    }
+    else iShowBMP2(18, screenHeight - 65, ".\\assets\\pause\\pause.bmp", 0);
+
+    if (haveResume)
+    {
+        iShowBMP(480, 80, ".\\assets\\pause\\pauseMenu.bmp");
+        for (int i = 0; i < 4; i++)
+        {
+            if (pauseMenuButtonHovered == i)
+            {
+                iSetColor(violet[0], violet[1], violet[2]);
+                iFilledRectangle(560, 460 - 80*i, 440, 65);
+                iShowBMP2(480, 460 - 80*i, pauseButtons[i], 0);
+            }
+            else iShowBMP2(480, 460 - 80*i, pauseButtons[i], 0);
+        }
+    }
+    
 }
 
+void drawBackButton()
+{
+	if (backButtonHovered)
+    {
+        iSetColor(violet[0], violet[1], violet[2]);
+        iFilledRectangle(10, 10, 140, 65);
+        iShowBMP2(10, 10, ".\\assets\\settings\\back.bmp", 0);
+    }
+    else iShowBMP2(10, 10, ".\\assets\\settings\\back.bmp", 0);
+}
 
 void drawSettingsPage()
 {
@@ -295,6 +361,7 @@ void drawSettingsPage()
         else iShowBMP(720 + 180*i, 130, yesNo[i]);
     }
 
+    drawBackButton();
 }
 
 void drawInstructionPage()

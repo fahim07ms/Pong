@@ -23,7 +23,7 @@ extern int ballServer;
 extern int backButtonHovered, pauseButtonHovered;
 extern bool haveResume, gameHasEnd, gameHasStarted;
 
-void hit_ball();
+void hit_ball(int playerNo);
 void update_hit_ball();
 void update_keyboard_sensitivity();
 
@@ -46,9 +46,14 @@ void update_hit_ball()
 	ball2.x += ball2DX;
 	ball2.y += ball2DY;
 
-	if (abs(ball1.x - ball2.x) <= 30 && abs(ball1.y - ball2.y) <= 30)
+	if (abs(ball1.x - ball2.x) <= 32 && abs(ball1.y - ball2.y) <= 32)
 	{
-		ball1.angle = atan((ball1.velocity * sin(ball1.angle) + ball2DY) / (ball1.velocity * cos(ball1.angle) + ball2DX));
+		double angle = atan(ball2DY / (ball1.velocity * cos(ball1.angle) + ball2DX));
+		angle = (angle > 0) ? angle : -angle;
+		if (ball1.angle > PI/2 && ball2DX < 0) ball1.angle = PI +  angle;
+		else if (ball1.angle > PI/2 && ball2DX > 0) ball1.angle = - (angle);
+		else if (ball1.angle < PI/2 && ball2DX < 0) ball1.angle = PI - angle;
+		else ball1.angle = - angle;
 		ball1.velocity = 18;
 		ballServed = true;
 	}
@@ -64,20 +69,20 @@ void update_hit_ball()
 	}
 }
 
-void hit_ball()
+void hit_ball(int playerNo)
 {
 	if (randomHit)
 	{
-		ball2.x = (rand() % 2) ? 200 : screenWidth - 200; 
-		ball2.y = screenHeight - rand() % 300;
+		ball2.x = (playerNo == 1) ? screenWidth - 200 : 200; 
+		ball2.y = screenHeight - rand() % 300 - 20;
 
 		double vx = ((Setting.serveSlow) ? ballVelocity[0] : ballVelocity[2]) * cos(ball1.angle);
 		double vy = ((Setting.serveSlow) ? ballVelocity[0] : ballVelocity[2]) * sin(ball1.angle);
 
-		double collisionX = ball1.x + vx*20;
-		double collisionY = ball1.y + vy*20;
+		double collisionX = ball1.x + vx*25;
+		double collisionY = ball1.y + vy*25;
 		double yCollisionDistance = (ball1.y > collisionY) ? ball1.y - collisionY : collisionY - ball1.y;
-		printf("%lf %lf \n", collisionX, collisionY);
+		//printf("%lf %lf \n", collisionX, collisionY);
 
 		int closeBounce = (vy > 0) ? screenHeight - 20 - ball1.y : ball1.y - 20;
 		if (yCollisionDistance > closeBounce) 
@@ -89,18 +94,15 @@ void hit_ball()
 
 				vy = -vy;
 			}
-
 			collisionY = (vy < 0) ? yCollisionDistance + 20 : (screenHeight - 20) - yCollisionDistance;
-
 		}
 		else 
 		{
 			collisionY = (vy > 0) ? ball1.y + yCollisionDistance : ball1.y - yCollisionDistance;
 		}
 
-		ball2DX = (collisionX - ball2.x)/15;
-		ball2DY = (collisionY - ball2.y)/15;
-		printf("%d %d\n", ball2DX, ball2DY);
+		ball2DX = (collisionX - ball2.x)/12;
+		ball2DY = (collisionY - ball2.y)/12;
 
 		randomHit = false;
 	}
@@ -165,7 +167,7 @@ void ballGoesOut()
     {
         ball1.x = 768;
         ball1.y = 400;
-
+		int scorer = -1;
         if ((ball1.velocity * cos(ball1.angle)) > 0) 
         {
             player2.score++;
@@ -173,6 +175,7 @@ void ballGoesOut()
 			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
 			{
 				randomHit =true;
+				scorer = player2.playerNo;
 			}
         }
         else 
@@ -182,6 +185,7 @@ void ballGoesOut()
 			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
 			{
 				randomHit =true;
+				scorer = player1.playerNo;
 			}
 
         }
@@ -207,10 +211,7 @@ void ballGoesOut()
         player2.barY = 360;
 		player1.destination = player1.barY;
 		player2.destination = player2.barY;
-        // ball1.dy = 0;
-
-		if (randomHit) hit_ball();
-
+		hit_ball(scorer);
         Sleep(3000);
     }
 }

@@ -249,7 +249,7 @@ void drawGamePage()
     iFilledCircle(ball1.x, ball1.y, ball1.radius);
 
     // Ball2
-    iSetColor(violet[0], violet[1],violet[2]);
+    iSetColor(255, violet[1],violet[2]);
     iFilledCircle(ball2.x, ball2.y, ball2.radius);
 
     // Setup for if the ball goes away

@@ -23,6 +23,89 @@ extern int ballServer;
 extern int backButtonHovered, pauseButtonHovered;
 extern bool haveResume, gameHasEnd, gameHasStarted;
 
+void hit_ball();
+void update_hit_ball();
+void update_keyboard_sensitivity();
+
+void update_keyboard_sensitivity()
+{
+	if (Setting.keyboardSensitivity == 0) 
+	{
+		player1.maxSpeed = 10;
+		if (!player2.isComputer) player2.maxSpeed = 10;
+	}
+	else 
+	{
+		player1.maxSpeed = 12;
+		if (!player2.isComputer) player2.maxSpeed = 12;
+	}
+}
+
+void update_hit_ball()
+{
+	ball2.x += ball2DX;
+	ball2.y += ball2DY;
+
+	if (abs(ball1.x - ball2.x) <= 30 && abs(ball1.y - ball2.y) <= 30)
+	{
+		ball1.angle = atan((ball1.velocity * sin(ball1.angle) + ball2DY) / (ball1.velocity * cos(ball1.angle) + ball2DX));
+		ball1.velocity = 18;
+		ballServed = true;
+	}
+
+	if (ball2.x + ball2.radius < 200 || ball2.x - ball2.radius > (screenWidth - 200))
+	{
+		ball2DX = 0;
+		ball2DY = 0;
+	}
+	else if (ball2.y < borderBridth + ball2.radius || ball2.y > (screenHeight - borderBridth - ball2.radius)) 
+	{
+		ball2DY = -ball2DY;
+	}
+}
+
+void hit_ball()
+{
+	if (randomHit)
+	{
+		ball2.x = (rand() % 2) ? 200 : screenWidth - 200; 
+		ball2.y = screenHeight - rand() % 300;
+
+		double vx = ((Setting.serveSlow) ? ballVelocity[0] : ballVelocity[2]) * cos(ball1.angle);
+		double vy = ((Setting.serveSlow) ? ballVelocity[0] : ballVelocity[2]) * sin(ball1.angle);
+
+		double collisionX = ball1.x + vx*20;
+		double collisionY = ball1.y + vy*20;
+		double yCollisionDistance = (ball1.y > collisionY) ? ball1.y - collisionY : collisionY - ball1.y;
+		printf("%lf %lf \n", collisionX, collisionY);
+
+		int closeBounce = (vy > 0) ? screenHeight - 20 - ball1.y : ball1.y - 20;
+		if (yCollisionDistance > closeBounce) 
+		{
+			yCollisionDistance -= closeBounce;
+			while (yCollisionDistance > screenHeight - 40)
+			{
+				yCollisionDistance -= (screenHeight - 40);
+
+				vy = -vy;
+			}
+
+			collisionY = (vy < 0) ? yCollisionDistance + 20 : (screenHeight - 20) - yCollisionDistance;
+
+		}
+		else 
+		{
+			collisionY = (vy > 0) ? ball1.y + yCollisionDistance : ball1.y - yCollisionDistance;
+		}
+
+		ball2DX = (collisionX - ball2.x)/15;
+		ball2DY = (collisionY - ball2.y)/15;
+		printf("%d %d\n", ball2DX, ball2DY);
+
+		randomHit = false;
+	}
+}
+
 void update_bar1()
 {
 	if(!player1ControlIsMouse) 
@@ -44,7 +127,7 @@ void update_bar2()
 	}
 } 
 
-void aiMove()
+void computerMove()
 {
 	double vy = ball1.velocity * sin(ball1.angle);
 	verticalCollisionDistance = (vy * (screenWidth - 440)) / (ball1.velocity * cos(ball1.angle));
@@ -69,11 +152,11 @@ void aiMove()
 		player2.destination = (vy > 0) ? ball1.y + verticalCollisionDistance : ball1.y - verticalCollisionDistance;
 	}
 
-	player2.destination = player2.destination - player2.destination % player2.maxSpeed;
 	if ((player2.destination < (screenHeight - borderBridth - player2.height/2) && (player2.destination > borderBridth + player2.height/2))) 
 	{
 		player2.destination = player2.destination - player2.height/2;
 	}
+	player2.destination = player2.destination - player2.destination % player2.maxSpeed;
 }
 
 void ballGoesOut()
@@ -85,13 +168,22 @@ void ballGoesOut()
 
         if ((ball1.velocity * cos(ball1.angle)) > 0) 
         {
-            player1.score++;
-            if (checkGameEnd(player1.score)) gameEnd(player1.playerNo);
+            player2.score++;
+            if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
+			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
+			{
+				randomHit =true;
+			}
         }
         else 
         {
-            player2.score++;
-            if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
+            player1.score++;
+            if (checkGameEnd(player1.score)) gameEnd(player1.playerNo);
+			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
+			{
+				randomHit =true;
+			}
+
         }
 
 		if (Setting.serveSlow) ballServed = false;
@@ -111,11 +203,13 @@ void ballGoesOut()
 		}
 
 		ball1.angle = (ballServer == 1) ? 0 : PI;
-        player1.barY = 350;
-        player2.barY = 350;
+        player1.barY = 360;
+        player2.barY = 360;
 		player1.destination = player1.barY;
 		player2.destination = player2.barY;
         // ball1.dy = 0;
+
+		if (randomHit) hit_ball();
 
         Sleep(3000);
     }
@@ -206,7 +300,7 @@ void update_game()
 
 			if (player2.isComputer)
 			{
-				aiMove();
+				computerMove();
 			}
 		}
 
@@ -217,7 +311,7 @@ void update_game()
 		paddleDoesNotCrossBorder();
 
 
-		printf("BallX: %lf, BallY: %lf, Ball veclocity: %lf, Ball angle: %lf, vx: %lf, vy: %lf\n", ball1.x, ball1.y, ball1.velocity, ball1.angle, (ball1.velocity * cos(ball1.angle)), (ball1.velocity * sin(ball1.angle)));
+		//printf("BallX: %lf, BallY: %lf, Ball veclocity: %lf, Ball angle: %lf, vx: %lf, vy: %lf\n", ball1.x, ball1.y, ball1.velocity, ball1.angle, (ball1.velocity * cos(ball1.angle)), (ball1.velocity * sin(ball1.angle)));
 	}
 }
 
@@ -240,21 +334,8 @@ void iDraw()
 		iFilledRectangle(0, 0, screenWidth, screenHeight);
 		drawBackButton();
 
-		if (playerButtonHovered == 1)
-        {
-            iSetColor(124, 23, 255);
-            iFilledRectangle(450, 430, 620, 100);
-            iShowBMP2(450, 430, ".\\assets\\menu\\oneplayer.bmp", 0);
-        }
-        else iShowBMP2(450, 430, ".\\assets\\menu\\oneplayer.bmp", 0);
-
-		if (playerButtonHovered == 2)
-        {
-            iSetColor(124, 23, 255);
-            iFilledRectangle(450, 270, 620, 100);
-            iShowBMP2(445, 270, ".\\assets\\menu\\twoplayer.bmp", 0);
-        }
-        else iShowBMP2(445, 270, ".\\assets\\menu\\twoplayer.bmp", 0);
+		hoverEffect(450, 430, ".\\assets\\menu\\oneplayer.bmp", 0, 450, 430, 620, 100, playerButtonHovered, 1);
+		hoverEffect(445, 270, ".\\assets\\menu\\twoplayer.bmp", 0, 450, 270, 620, 100, playerButtonHovered, 2);
 	}
 	else if (currentPage == 21)
 	{
@@ -262,21 +343,8 @@ void iDraw()
 		iFilledRectangle(0, 0, screenWidth, screenHeight);
 		drawBackButton();
 
-		if (controlButtonHovered == 1)
-        {
-            iSetColor(124, 23, 255);
-            iFilledRectangle(450, 430, 620, 100);
-            iShowBMP2(450, 430, ".\\assets\\menu\\mouse.bmp", 0);
-        }
-        else iShowBMP2(450, 430, ".\\assets\\menu\\mouse.bmp", 0);
-
-		if (controlButtonHovered == 2)
-        {
-            iSetColor(124, 23, 255);
-            iFilledRectangle(450, 270, 620, 100);
-            iShowBMP2(445, 270, ".\\assets\\menu\\keyboard.bmp", 0);
-        }
-        else iShowBMP2(445, 270, ".\\assets\\menu\\keyboard.bmp", 0);
+		hoverEffect(450, 430, ".\\assets\\menu\\mouse.bmp", 0, 450, 430, 620, 100, controlButtonHovered, 1);
+		hoverEffect(445, 270, ".\\assets\\menu\\keyboard.bmp", 0, 450, 270, 620, 100, controlButtonHovered, 2);
 	}
 	else if (currentPage == 2)
 	{
@@ -284,7 +352,6 @@ void iDraw()
 	}
 	
 }
-
 /*
 	function iMouseMove() is called when the user presses and	 the mouse.
 	(mx, my) is the position where the mouse pointer is.
@@ -322,10 +389,9 @@ void iMouse(int button, int state, int mx, int my)
 							else continue;
 							break;
 						case 1:
-							if (haveResume)
+							if (haveResume || gameHasEnd)
 							{
 								gameRestart();
-								haveResume = false;
 							}
 							currentPage = 11;
 							break;
@@ -395,6 +461,13 @@ void iMouse(int button, int state, int mx, int my)
 					}
 				}
 			}
+			else if (gameHasEnd)
+			{
+				bool bound1 = (winner == player1.playerNo) ? (mx >= screenWidth - 605 && mx <= screenWidth - 355 && my >= screenHeight - 480 && my <= screenHeight - 380) : (mx >= 345 && mx <= 595 && my >= screenHeight - 480 && my <= screenHeight - 380);
+				bool bound2 = (winner == player1.playerNo) ? (mx >= screenWidth - 635 && mx <= screenWidth - 385 && my >= 210 && my <= 310) : (mx >= 315 && mx <= 575 && my >= 210 && my <= 310);
+				if (bound1) gameRestart();
+				else if (bound2) currentPage = -1;
+			}
 		}
 		else if (currentPage == 11)
 		{
@@ -410,11 +483,9 @@ void iMouse(int button, int state, int mx, int my)
 				playSound(CLICK);
 				player2.isComputer = 0;
 				prevPage = currentPage;
+				player1ControlIsMouse = 0;
 				currentPage = 1;
 				gameHasStarted = true;
-				iSetTimer(10, update_game);
-				iSetTimer(10, update_bar1);
-				iSetTimer(10, update_bar2);
 			}
 
 			backButtonClicked(mx, my);
@@ -428,9 +499,6 @@ void iMouse(int button, int state, int mx, int my)
 				player1ControlIsMouse = 1;
 				currentPage = 1;
 				gameHasStarted = true;
-				iSetTimer(10, update_game);
-				iSetTimer(10, update_bar1);
-				iSetTimer(10, update_bar2);
 			}
 			else if ((mx >= 450 && mx <= 1070) && (my + 25 >= 260 && my + 25 <= 370))
 			{
@@ -439,9 +507,6 @@ void iMouse(int button, int state, int mx, int my)
 				player1ControlIsMouse = 0;
 				currentPage = 1;
 				gameHasStarted = true;
-				iSetTimer(10, update_game);
-				iSetTimer(10, update_bar1);
-				iSetTimer(10, update_bar2);
 			}
 
 			backButtonClicked(mx, my);
@@ -516,7 +581,7 @@ void iPassiveMouseMove(int mx, int my)
 	}
 	else if (currentPage == 1)
 	{
-		if (player1ControlIsMouse && !haveResume)
+		if (player1ControlIsMouse && !haveResume && !gameHasEnd)
 		{
 			if (my >= (screenHeight - borderBridth - player1.height)) 
 			{
@@ -542,9 +607,21 @@ void iPassiveMouseMove(int mx, int my)
 				else pauseButtonHovered = -1;
 			}
 		}
+		else if (gameHasEnd)
+		{
+			bool bound1 = (winner == player1.playerNo) ? (mx >= screenWidth - 605 && mx <= screenWidth - 355 && my >= screenHeight - 480 && my <= screenHeight - 380) : (mx >= 345 && mx <= 595 && my >= screenHeight - 480 && my <= screenHeight - 380);
+			bool bound2 = (winner == player1.playerNo) ? (mx >= screenWidth - 635 && mx <= screenWidth - 385 && my >= 210 && my <= 310) : (mx >= 315 && mx <= 575 && my >= 210 && my <= 310);
+			if (bound1) gameOverButtonHovered = 1;
+			else if (bound2) gameOverButtonHovered = 2;
+			else gameOverButtonHovered = 0;
+		}
 
-		if (mx >= 18 && mx <= 78 && my >= screenHeight - 85 && my <= screenHeight - 25) pauseButtonHovered = 1;
-		else pauseButtonHovered = 0;
+		if (!gameHasEnd)
+		{
+			if (mx >= 18 && mx <= 78 && my >= screenHeight - 85 && my <= screenHeight - 25) pauseButtonHovered = 1;
+			else pauseButtonHovered = 0;
+		}
+		
 	}
 	else if (currentPage == 11)
 	{
@@ -606,10 +683,51 @@ void iKeyboard(unsigned char key)
 		if (key == 'w' && player2.barMoveState != 1)
 		{
 			player2.destination = player2.barY + player2.barDY;
+			player2.destination = player2.destination - player2.destination%player2.maxSpeed;
 		}
 		if (key == 'x' && player2.barMoveState != -1)
 		{
 			player2.destination = player2.barY - player2.barDY;
+			player2.destination = player2.destination - player2.destination%player2.maxSpeed;
+		}
+	}
+
+	if (currentPage == 11)
+	{
+		if (key == '1')
+		{
+			playSound(CLICK);
+			player2.isComputer = 1;
+			prevPage = currentPage;
+			currentPage = 21;
+		}
+		else if (key == '2')
+		{
+			playSound(CLICK);
+			player2.isComputer = 0;
+			prevPage = currentPage;
+			player1ControlIsMouse = 0;
+			currentPage = 1;
+			gameHasStarted = true;
+		}
+	}
+	else if (currentPage == 21)
+	{
+		if (key == 'm')
+		{
+			playSound(CLICK);
+			prevPage = currentPage;
+			player1ControlIsMouse = 1;
+			currentPage = 1;
+			gameHasStarted = true;
+		}
+		else if (key == 'k')
+		{
+			playSound(CLICK);
+			prevPage = currentPage;
+			player1ControlIsMouse = 0;
+			currentPage = 1;
+			gameHasStarted = true;
 		}
 	}
 }
@@ -631,10 +749,12 @@ void iSpecialKeyboard(unsigned char key)
 	if (key == GLUT_KEY_UP && player1.barMoveState != 1 && !player1ControlIsMouse)
 	{
 		player1.destination = player1.barY + player1.barDY;
+		player1.destination = player1.destination - player1.destination%player1.maxSpeed;
 	}
 	if (key == GLUT_KEY_DOWN && player1.barMoveState != -1 && !player1ControlIsMouse)
 	{
 		player1.destination = player1.barY - player1.barDY;
+		player1.destination = player1.destination - player1.destination%player1.maxSpeed;
 	}
 	//place your codes for other keys here
 }
@@ -643,6 +763,11 @@ int main()
 {
 	//place your own initialization codes here.
 	//if (currentPage == 1) iSetTimer()
+	iSetTimer(10, update_game);
+	iSetTimer(10, update_bar1);
+	iSetTimer(10, update_bar2);
+	iSetTimer(20, update_hit_ball);
+	iSetTimer(100, update_keyboard_sensitivity);
 	iInitialize(screenWidth, screenHeight, "The Pong Game");
 	return 0;
 }

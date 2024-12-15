@@ -26,6 +26,12 @@ extern bool haveResume, gameHasEnd, gameHasStarted;
 void hit_ball(int playerNo);
 void update_hit_ball();
 void update_keyboard_sensitivity();
+void update_intro();
+
+void update_intro()
+{
+	introGiven = true;
+}
 
 void update_keyboard_sensitivity()
 {
@@ -46,7 +52,7 @@ void update_hit_ball()
 	ball2.x += ball2DX;
 	ball2.y += ball2DY;
 
-	if (abs(ball1.x - ball2.x) <= 32 && abs(ball1.y - ball2.y) <= 32)
+	if (abs(ball1.x - ball2.x) <= 40 && abs(ball1.y - ball2.y) <= 40)
 	{
 		double angle = atan(ball2DY / (ball1.velocity * cos(ball1.angle) + ball2DX));
 		angle = (angle > 0) ? angle : -angle;
@@ -321,9 +327,14 @@ void iDraw()
 	//place your drawing codes here
 	iClear();
 	
+	
 	if (currentPage == -1)
 	{
-		drawHomePage();
+		if (!introGiven) 
+		{
+			iShowBMP(0, 0, ".\\assets\\images\\intro.bmp");
+		}
+		else drawHomePage();
 	}
 	else if (currentPage == 1)
 	{	
@@ -350,6 +361,10 @@ void iDraw()
 	else if (currentPage == 2)
 	{
 		drawSettingsPage();
+	}
+	else if (currentPage == 3)
+	{
+		drawInstructionPage();
 	}
 	
 }
@@ -561,6 +576,10 @@ void iMouse(int button, int state, int mx, int my)
 
 			backButtonClicked(mx, my);
 		}
+		else if (currentPage == 3)
+		{
+			backButtonClicked(mx, my);
+		}
 	}
 	
 }
@@ -653,6 +672,10 @@ void iPassiveMouseMove(int mx, int my)
 		backButtonHover(mx, my);
 	}
 	else if (currentPage == 2)
+	{
+		backButtonHover(mx, my);
+	}
+	else if (currentPage == 3)
 	{
 		backButtonHover(mx, my);
 	}
@@ -764,6 +787,7 @@ int main()
 {
 	//place your own initialization codes here.
 	//if (currentPage == 1) iSetTimer()
+	iSetTimer(3000, update_intro);
 	iSetTimer(10, update_game);
 	iSetTimer(10, update_bar1);
 	iSetTimer(10, update_bar2);

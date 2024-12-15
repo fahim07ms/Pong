@@ -30,6 +30,7 @@ int gameOverButtonHovered = -1;
 
 int prevPage = -1;
 int currentPage = -1;
+bool introGiven = false;
 
 int winner = 0;
 int player1ControlIsMouse = 0;
@@ -365,7 +366,8 @@ void drawSettingsPage()
 
 void drawInstructionPage()
 {
-
+    iShowBMP(0, 0, ".\\assets\\images\\instructionsMenu.bmp");
+    drawBackButton();
 }
 
 void playSound(sound snd)

@@ -9,7 +9,7 @@
 #endif	
 
 #define PI 3.141592654
-#define DEFAULT_SETTING {.maxScore = 5, .serveSlow = true, .whoServesFirst = 0, .keyboardSensitivity = 1, .soundOn = true};
+#define DEFAULT_SETTING {.maxScore = 5, .serveSlow = true, .whoServesFirst = 0, .keyboardSensitivity = 1, .soundOn = true, .useRandomHit = false};
 #define DEFAULT_BALL {.x = 768, .y = 400, .velocity = ballVelocity[0], .angle = 0, .radius = 12};
 #define DEFAULT_PLAYER1 {.playerNo = 1, .isComputer = 0, .width = 16, .height = 100, .barX = 1536 - 235, .barY = 360, .barDY = 70, .barMoveState = 0, .score = 0, .destination = 360, .maxSpeed = 10};
 #define DEFAULT_PLAYER2 {.playerNo = 2, .isComputer = 1, .width = 16, .height = 100,  .barX = 220, .barY = 360, .barDY = 70, .barMoveState = 0,.score = 0,.destination = 360,.maxSpeed = 8};
@@ -60,6 +60,7 @@ struct Settings {
     int whoServesFirst;
     int keyboardSensitivity;
     bool soundOn;
+    bool useRandomHit;
 };
 
 struct Settings Setting  =  DEFAULT_SETTING;
@@ -309,7 +310,7 @@ void drawBackButton()
 
 void drawSettingsPage()
 {
-    iShowBMP(0, 0, ".\\assets\\settings\\settings_menu2.bmp");
+    iShowBMP(0, 0, ".\\assets\\images\\settings_menu3.bmp");
 
     
     // for (int i = 0; i < screenWidth; i += 20)
@@ -359,6 +360,12 @@ void drawSettingsPage()
     for (int i = 0; i < 2; i++)
     {
         hoverEffect(720 + 180*i, 130, yesNo[i], 0, 720 + 180*i, 130, 140, 65, !Setting.soundOn, i);
+    }
+
+    // Fo raandom Hit
+    for (int i = 0; i < 2; i++)
+    {
+        hoverEffect(720 + 180*i, 40, yesNo[i], 0, 720 + 180*i, 40, 140, 65, !Setting.useRandomHit, i);
     }
 
     drawBackButton();

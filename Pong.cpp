@@ -178,7 +178,7 @@ void ballGoesOut()
         {
             player2.score++;
             if (checkGameEnd(player2.score)) gameEnd(player2.playerNo);
-			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
+			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false && Setting.useRandomHit) 
 			{
 				randomHit =true;
 				scorer = player2.playerNo;
@@ -188,7 +188,7 @@ void ballGoesOut()
         {
             player1.score++;
             if (checkGameEnd(player1.score)) gameEnd(player1.playerNo);
-			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false) 
+			else if ((player1.score + player2.score) % 3 == 0 && randomHit == false && Setting.useRandomHit) 
 			{
 				randomHit =true;
 				scorer = player1.playerNo;
@@ -571,6 +571,15 @@ void iMouse(int button, int state, int mx, int my)
 				{
 					playSound(CLICK);
 					Setting.keyboardSensitivity = i;
+				}
+			}
+
+			for (int i = 0; i < 2; i++)
+			{
+				if (mx >= 720 + 180*i  && mx <= 860 + 180*i && my >= 40 - 50 && my <= 105 - 50)
+				{
+					playSound(CLICK);
+					Setting.useRandomHit = !i;
 				}
 			}
 

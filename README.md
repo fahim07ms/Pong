@@ -30,7 +30,7 @@ cd Pong
 2. Set up iGraphics:
    - Ensure OpenGL is properly installed
    - Configure Visual Studio with required iGraphics dependencies
-   - Read [this pdf](https://drive.google.com/drive/folders/1MtlOljKJ8tggZ88yQlx20Oqq2BjH04Qi) to setup iGraphics
+   - Read [this pdf](https://drive.google.com/file/d/1YLd8IN4to4sLFFt5VzU7XF1eq3nGs-LW/view?usp=sharing) to setup iGraphics
 
 3. Build and Run:
    - Open the project in Visual Studio

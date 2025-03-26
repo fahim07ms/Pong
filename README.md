@@ -30,6 +30,7 @@ cd Pong
 2. Set up iGraphics:
    - Ensure OpenGL is properly installed
    - Configure Visual Studio with required iGraphics dependencies
+   - Read this to setup iGraphics - ![https://drive.google.com/drive/folders/1MtlOljKJ8tggZ88yQlx20Oqq2BjH04Qi]
 
 3. Build and Run:
    - Open the project in Visual Studio
@@ -50,3 +51,4 @@ cd Pong
 2. **Scoring**:
    - Score points by getting the ball past your opponent's paddle
    - First player to reach the score limit wins
+     
